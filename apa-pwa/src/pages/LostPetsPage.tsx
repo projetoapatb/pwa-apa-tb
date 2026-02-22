@@ -86,7 +86,6 @@ const LostPetsPage: React.FC = () => {
             {showForm && (
                 <div className="mb-12 animate-fade-in">
                     <LostPetForm
-                        onSuccess={() => setShowForm(false)}
                         onCancel={() => setShowForm(false)}
                     />
                 </div>

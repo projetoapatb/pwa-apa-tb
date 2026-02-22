@@ -10,7 +10,7 @@ import {
     Clock,
     X,
     AlertTriangle,
-    CheckCircle2,
+    ChevronRight,
     Info,
     Download,
     Trash2,
@@ -205,16 +205,16 @@ const RescuesPage: React.FC = () => {
                         >
                             <Card className="p-6 border-none shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden bg-white group rounded-3xl cursor-pointer">
                                 <div className={`absolute top-0 left-0 w-1.5 h-full transition-all group-hover:w-2 ${rescue.urgency === 'critica' ? 'bg-red-500' :
-                                        rescue.urgency === 'alta' ? 'bg-orange-500' :
-                                            rescue.urgency === 'media' ? 'bg-yellow-400' : 'bg-blue-400'
+                                    rescue.urgency === 'alta' ? 'bg-orange-500' :
+                                        rescue.urgency === 'media' ? 'bg-yellow-400' : 'bg-blue-400'
                                     }`} />
 
                                 <div className="flex flex-col md:flex-row justify-between gap-6 pl-2">
                                     <div className="space-y-4 flex-grow max-w-2xl">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest ${rescue.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' :
-                                                    rescue.status === 'em_andamento' ? 'bg-blue-100 text-blue-700' :
-                                                        rescue.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                                rescue.status === 'em_andamento' ? 'bg-blue-100 text-blue-700' :
+                                                    rescue.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
                                                 }`}>
                                                 {rescue.status.replace('_', ' ')}
                                             </span>
@@ -287,8 +287,8 @@ const RescuesPage: React.FC = () => {
                         <div className="space-y-6">
                             <div className="flex flex-wrap items-center gap-3">
                                 <span className={`text-xs font-black uppercase px-4 py-1.5 rounded-full tracking-widest ${selectedRescue.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' :
-                                        selectedRescue.status === 'em_andamento' ? 'bg-blue-100 text-blue-700' :
-                                            selectedRescue.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                    selectedRescue.status === 'em_andamento' ? 'bg-blue-100 text-blue-700' :
+                                        selectedRescue.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
                                     }`}>
                                     {selectedRescue.status.replace('_', ' ')}
                                 </span>

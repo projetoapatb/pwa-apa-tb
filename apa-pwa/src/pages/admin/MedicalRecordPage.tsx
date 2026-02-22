@@ -10,10 +10,8 @@ import {
     Calendar,
     ChevronRight,
     Plus,
-    Clock,
     X,
     AlertTriangle,
-    CheckCircle2,
     ClipboardList,
     Download,
     Trash2
@@ -221,8 +219,8 @@ const MedicalRecordPage: React.FC = () => {
                             <Card className="p-6 border-none shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col md:flex-row justify-between items-center gap-6 group bg-white rounded-3xl cursor-pointer">
                                 <div className="flex items-center gap-6 w-full">
                                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 ${record.type === 'cirurgia' ? 'bg-red-50 text-red-500' :
-                                            record.type === 'vacina' ? 'bg-blue-50 text-blue-500' :
-                                                record.type === 'exame' ? 'bg-purple-50 text-purple-500' : 'bg-brand-green/10 text-brand-green'
+                                        record.type === 'vacina' ? 'bg-blue-50 text-blue-500' :
+                                            record.type === 'exame' ? 'bg-purple-50 text-purple-500' : 'bg-brand-green/10 text-brand-green'
                                         } shadow-inner`}>
                                         {record.type === 'vacina' ? <Activity size={28} /> :
                                             record.type === 'cirurgia' ? <AlertTriangle size={28} /> :
@@ -232,8 +230,8 @@ const MedicalRecordPage: React.FC = () => {
                                         <div className="flex items-center gap-2 mb-1">
                                             <h3 className="font-bold text-gray-800 text-xl group-hover:text-brand-green transition-colors truncate">{record.petName}</h3>
                                             <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md tracking-tighter ${record.type === 'cirurgia' ? 'bg-red-100 text-red-600' :
-                                                    record.type === 'vacina' ? 'bg-blue-100 text-blue-600' :
-                                                        'bg-gray-100 text-gray-400'
+                                                record.type === 'vacina' ? 'bg-blue-100 text-blue-600' :
+                                                    'bg-gray-100 text-gray-400'
                                                 }`}>
                                                 {record.type}
                                             </span>
@@ -253,7 +251,7 @@ const MedicalRecordPage: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-6 w-full md:w-auto justify-end">
                                     <span className={`text-[10px] font-black uppercase px-4 py-1.5 rounded-full tracking-widest shadow-sm ${record.status === 'agendado' ? 'bg-yellow-100 text-yellow-700' :
-                                            record.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                        record.status === 'concluido' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                         }`}>
                                         {record.status}
                                     </span>

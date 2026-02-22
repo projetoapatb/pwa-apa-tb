@@ -27,11 +27,10 @@ const lostPetSchema = z.object({
 type LostPetFormValues = z.infer<typeof lostPetSchema>;
 
 interface LostPetFormProps {
-    onSuccess?: () => void;
     onCancel?: () => void;
 }
 
-export const LostPetForm: React.FC<LostPetFormProps> = ({ onSuccess, onCancel }) => {
+export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
     const { profile, user } = useAuth();
     const [submitted, setSubmitted] = useState(false);
 
