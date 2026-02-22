@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função auxiliar para verificar se é administrador
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Configurações Globais (Feature Flags)
+    match /flags/{flagId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Configurações Gerais (PIX, Itens de Doação, etc)
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Usuários: Cada um vê o seu, Admin vê tudo
+    match /users/{userId} {
+      allow read, update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      // Permitir criação apenas se o usuário não tentar definir seu próprio papel (role)
+      // Ajuste: O role deve ser atribuído externamente ou via Cloud Function para segurança máxima
+      allow create: if request.auth != null && request.auth.uid == userId && 
+                     (!('role' in request.resource.data) || request.resource.data.role == 'user');
+    }
+
+    // Animais para Adoção (Unificado: Cães e Gatos)
+    match /pets/{petId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if isAdmin();
+    }
+
+    // Alias por compatibilidade legada
+    match /dogs/{dogId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Resultados Mensais (Impacto)
+    match /results/{resultId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Leads de Adoção: Público envia, Admin gerencia
+    match /leads_adoption/{leadId} {
+      allow create: if request.auth != null; 
+      allow read: if request.auth != null;
+      allow update, delete: if isAdmin();
+    }
+
+    // Leads de Voluntariado: Público envia, Admin gerencia
+    match /leads_volunteer/{leadId} {
+      allow create: if request.auth != null; 
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, write: if isAdmin();
+    }
+
+    // Leads de Lar Temporário: Público envia, Admin gerencia
+    match /leads_lt/{leadId} {
+      allow create: if true; 
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, write: if isAdmin();
+    }
+
+    // Mural de Perdidos: Público envia com login, Admin gerencia
+    match /lost_pets/{petId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if isAdmin();
+    }
+
+    // Gestão de Resgates e Médicos
+    match /rescues/{rescueId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /medical_records/{recordId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Parceiros e Posts
+    match /partners/{partnerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /posts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
