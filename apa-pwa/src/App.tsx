@@ -372,7 +372,7 @@ function AppRoutes() {
               <div>
                 <h4 className="font-bold text-gray-800 mb-4">Contato</h4>
                 <p className="text-sm text-gray-500 italic">"Pela dignidade dos animais."</p>
-                <div className="mt-4 text-xs font-bold text-brand-green">© 2026 SchCodes</div>
+                <div className="mt-4 text-xs font-bold text-brand-green">© 2026 SchCodes · Wesley-GL23</div>
               </div>
             </div>
           </footer>
