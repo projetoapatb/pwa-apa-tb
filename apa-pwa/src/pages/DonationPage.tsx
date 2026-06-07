@@ -8,6 +8,7 @@ import SEO from '../components/SEO';
 const DonationPage: React.FC = () => {
     const [settings, setSettings] = useState<GlobalSettings | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
@@ -19,6 +20,7 @@ const DonationPage: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Erro ao carregar doações:", error);
+                setLoadError(true);
             } finally {
                 setLoading(false);
             }
@@ -50,6 +52,12 @@ const DonationPage: React.FC = () => {
                         "O amor pelos animais é o que nos move, o seu apoio é o que nos sustenta."
                     </p>
                 </header>
+
+                {loadError && (
+                    <p className="text-center text-sm text-gray-500 mb-8 bg-orange-50 border border-orange-100 rounded-2xl p-4">
+                        Algumas informações de doação não puderam ser carregadas. Tente recarregar a página ou entre em contato com a APA.
+                    </p>
+                )}
 
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* Opção PIX */}

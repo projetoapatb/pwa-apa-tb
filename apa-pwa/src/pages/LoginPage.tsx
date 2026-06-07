@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogIn, Lock, Mail, AlertCircle } from 'lucide-react';
 
@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
             await signInWithGoogle();
         } catch (err: any) {
             console.error(err);
-            setError('Erro ao entrar com Google. Tente novamente.');
+            setError('Não foi possível entrar com o Google. Tente novamente ou use e-mail e senha.');
             setLoading(false);
         }
     };
@@ -144,7 +144,10 @@ const LoginPage: React.FC = () => {
 
                     <div className="mt-8 text-center pt-6 border-t border-gray-100">
                         <p className="text-xs text-gray-400">
-                            Ao entrar, você concorda com nossos termos de uso e privacidade.
+                            Ao entrar, você declara estar ciente da{' '}
+                            <Link to="/privacidade" className="text-brand-green font-medium hover:underline">
+                                Política de Privacidade
+                            </Link>.
                         </p>
                     </div>
                 </div>

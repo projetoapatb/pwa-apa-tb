@@ -6,6 +6,7 @@ import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
+import { PrivacyConsentCheckbox } from './PrivacyConsentCheckbox';
 import { CheckCircle2, Send, Camera, MapPin, Phone, Calendar, Info } from 'lucide-react';
 import { maskPhone, validatePhone } from '../utils/masks';
 
@@ -33,6 +34,8 @@ interface LostPetFormProps {
 export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
     const { profile, user } = useAuth();
     const [submitted, setSubmitted] = useState(false);
+    const [privacyConsent, setPrivacyConsent] = useState(false);
+    const [consentError, setConsentError] = useState('');
 
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue, watch } = useForm<LostPetFormValues>({
         resolver: zodResolver(lostPetSchema),
@@ -55,8 +58,17 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
 
 
     const onSubmit = async (values: LostPetFormValues) => {
+        if (!privacyConsent) {
+            setConsentError('É necessário aceitar a Política de Privacidade para continuar.');
+            return;
+        }
+        setConsentError('');
+
         try {
-            if (!user) throw new Error("Usuário não autenticado");
+            if (!user) {
+                alert('Faça login para publicar um anúncio.');
+                return;
+            }
             await addDoc(collection(db, 'lost_pets'), {
                 ...values,
                 lastSeenDate: new Date(values.lastSeenDate),
@@ -71,7 +83,7 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
             // Removido o fechamento automático para que o usuário veja a confirmação
         } catch (error) {
             console.error("Erro ao anunciar no mural:", error);
-            alert("Ocorreu um erro ao enviar seu anúncio. Tente novamente.");
+            alert('Não foi possível enviar seu anúncio. Verifique os dados e tente novamente.');
         }
     };
 
@@ -148,7 +160,7 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
                             className="w-full p-4 pl-12 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-brand-orange transition-all"
                         />
                     </div>
-                    <p className="text-[10px] text-gray-300 ml-2 mt-1">Dica: Use um serviço como imgur ou link de rede social.</p>
+                    <p className="text-[10px] text-gray-300 ml-2 mt-1">Dica: use um link de imagem público (por exemplo, Imgur ou rede social).</p>
                 </div>
             </div>
 
@@ -230,6 +242,16 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
                     </div>
                 )}
             </div>
+
+            <PrivacyConsentCheckbox
+                checked={privacyConsent}
+                onChange={(checked) => {
+                    setPrivacyConsent(checked);
+                    if (checked) setConsentError('');
+                }}
+                id="lostPetPrivacyConsent"
+                error={consentError}
+            />
 
             <div className="flex gap-4 pt-4">
                 {onCancel && (

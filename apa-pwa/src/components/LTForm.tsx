@@ -6,6 +6,7 @@ import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
+import { PrivacyConsentCheckbox } from './PrivacyConsentCheckbox';
 import { CheckCircle2, Send, Home, LogIn, Clock, AlertTriangle, User as UserIcon, ChevronRight, XCircle, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { LeadLT } from '../types';
@@ -32,6 +33,8 @@ export const LTForm: React.FC = () => {
     const [submitted, setSubmitted] = useState(false);
     const [currentLead, setCurrentLead] = useState<LeadLT | null>(null);
     const [loadingLead, setLoadingLead] = useState(true);
+    const [privacyConsent, setPrivacyConsent] = useState(false);
+    const [consentError, setConsentError] = useState('');
 
     const { handleSubmit, formState: { isSubmitting }, reset, setValue } = useForm<LTFormValues>({
         resolver: zodResolver(ltSchema),
@@ -95,9 +98,21 @@ export const LTForm: React.FC = () => {
 
 
     const onSubmit = async (values: LTFormValues) => {
+        if (!privacyConsent) {
+            setConsentError('É necessário aceitar a Política de Privacidade para continuar.');
+            return;
+        }
+        setConsentError('');
+
         try {
-            if (!user) throw new Error("Aguarde o carregamento do login...");
-            if (!isProfileComplete) throw new Error("Seu perfil residencial está incompleto.");
+            if (!user) {
+                alert('Faça login para confirmar seu interesse.');
+                return;
+            }
+            if (!isProfileComplete) {
+                alert('Complete seu perfil residencial antes de continuar.');
+                return;
+            }
 
             await addDoc(collection(db, 'leads_lt'), {
                 ...values,
@@ -117,14 +132,14 @@ export const LTForm: React.FC = () => {
             });
             setSubmitted(true);
             reset();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Erro ao enviar cadastro de LT:", error);
-            alert(`Erro ao confirmar: ${error.message || 'Tente novamente.'}`);
+            alert('Não foi possível confirmar seu interesse. Verifique sua conexão e tente novamente.');
         }
     };
 
     if (loadingLead) {
-        return <div className="p-20 text-center animate-pulse text-gray-400">Verificando status...</div>;
+        return <div className="p-20 text-center animate-pulse text-gray-400">Carregando informações...</div>;
     }
 
     // Se estiver pendente ou aprovado, bloqueia novo envio
@@ -214,7 +229,7 @@ export const LTForm: React.FC = () => {
             {!user ? (
                 // ... same login code
                 <div className="bg-brand-orange/5 border-2 border-brand-orange/20 p-8 rounded-[2.5rem] text-center space-y-4">
-                    <p className="text-gray-700 font-bold text-lg">Faça login para se candidatar como LT</p>
+                    <p className="text-gray-700 font-bold text-lg">Faça login para se candidatar como Lar Temporário</p>
                     <p className="text-sm text-gray-500 max-w-xs mx-auto">Para garantir a segurança dos animais, precisamos identificar nossos colaboradores.</p>
                     <Button
                         type="button"
@@ -233,8 +248,8 @@ export const LTForm: React.FC = () => {
                         <h3 className="text-lg font-bold">Perfil Residencial Incompleto</h3>
                     </div>
                     <p className="text-gray-600 leading-relaxed">
-                        Para se candidatar como Lar Temporário, precisamos conhecer melhor sua estrutura (tipo de residência, espaço disponível, etc).
-                        Esses dados agora são salvos diretamente no seu **Perfil**.
+                        Para se candidatar como Lar Temporário, precisamos conhecer melhor sua estrutura (tipo de residência, espaço disponível etc.).
+                        Esses dados são salvos no seu perfil.
                     </p>
                     <div className="bg-white/50 p-4 rounded-2xl border border-brand-orange/10">
                         <p className="text-sm text-gray-500 italic">Preencha uma única vez no perfil e depois peça LT com apenas um clique!</p>
@@ -288,10 +303,20 @@ export const LTForm: React.FC = () => {
 
                     <div className="bg-brand-green/5 p-6 rounded-3xl border border-brand-green/10">
                         <p className="text-sm text-gray-600 text-center leading-relaxed">
-                            Ao clicar abaixo, você confirma seu interesse em ser **Lar Temporário** utilizando as informações acima.
-                            Entratemos em contato para os próximos passos!
+                            Ao clicar abaixo, você confirma seu interesse em ser Lar Temporário utilizando as informações acima.
+                            Entraremos em contato para os próximos passos.
                         </p>
                     </div>
+
+                    <PrivacyConsentCheckbox
+                        checked={privacyConsent}
+                        onChange={(checked) => {
+                            setPrivacyConsent(checked);
+                            if (checked) setConsentError('');
+                        }}
+                        id="ltPrivacyConsent"
+                        error={consentError}
+                    />
 
                     <Button
                         variant="primary"
@@ -299,7 +324,7 @@ export const LTForm: React.FC = () => {
                         isLoading={isSubmitting}
                         onClick={handleSubmit(onSubmit)}
                     >
-                        Confirmar Interesse em ser LT
+                        Confirmar interesse em ser Lar Temporário
                         <Send size={24} />
                     </Button>
                 </div>

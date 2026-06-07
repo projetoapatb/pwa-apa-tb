@@ -90,7 +90,8 @@ const NewsPage: React.FC = () => {
                 ) : (
                     <div className="text-center py-34 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 max-w-2xl mx-auto">
                         <Newspaper size={55} className="text-gray-100 mx-auto mb-8" />
-                        <p className="text-gray-400 font-medium text-lg">Ainda não temos postagens nesta categoria.</p>
+                        <p className="text-gray-400 font-medium text-lg">Ainda não há publicações nesta categoria.</p>
+                        <p className="text-gray-400 text-sm mt-2">Volte em breve para acompanhar as novidades da APA.</p>
                     </div>
                 )}
             </div>
