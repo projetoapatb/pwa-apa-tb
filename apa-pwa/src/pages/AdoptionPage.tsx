@@ -13,6 +13,7 @@ const AdoptionPage: React.FC = () => {
     const [filterSize, setFilterSize] = useState<string | 'TODOS'>('TODOS');
     const [filterSpecies, setFilterSpecies] = useState<string | 'TODOS'>('TODOS');
     const [filterAge, setFilterAge] = useState<string | 'TODOS'>('TODOS');
+    const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         setLoading(true);
@@ -42,10 +43,12 @@ const AdoptionPage: React.FC = () => {
             });
 
             setPets(petsData);
+            setLoadError(false);
             setLoading(false);
         }, (error) => {
 
             console.error("Erro ao buscar animais:", error);
+            setLoadError(true);
             setLoading(false);
         });
 
@@ -156,7 +159,15 @@ const AdoptionPage: React.FC = () => {
                 </div>
 
                 {/* Grid */}
-                {loading ? (
+                {loadError ? (
+                    <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+                        <h3 className="text-xl font-bold text-gray-700">Não foi possível carregar os animais</h3>
+                        <p className="text-gray-500 mt-2 max-w-md mx-auto">Verifique sua conexão com a internet e recarregue a página.</p>
+                        <Button variant="outline" className="mt-6" onClick={() => window.location.reload()}>
+                            Recarregar página
+                        </Button>
+                    </div>
+                ) : loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="bg-white rounded-3xl h-[450px] animate-pulse border border-gray-100">
@@ -181,7 +192,7 @@ const AdoptionPage: React.FC = () => {
                             <Filter size={32} className="text-gray-300" />
                         </div>
                         <h3 className="text-xl font-bold text-gray-700">Nenhum animal encontrado</h3>
-                        <p className="text-gray-500 mt-2">Tente mudar os filtros.</p>
+                        <p className="text-gray-500 mt-2">Tente alterar os filtros ou volte mais tarde.</p>
                         <Button
                             variant="outline"
                             className="mt-6"

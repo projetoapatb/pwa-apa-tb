@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SEO from '../components/SEO';
+import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
 import { maskPhone, validatePhone } from '../utils/masks';
 
 
@@ -50,6 +51,8 @@ const RegisterPetPage: React.FC = () => {
     const [previews, setPreviews] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [privacyConsent, setPrivacyConsent] = useState(false);
+    const [consentError, setConsentError] = useState('');
 
     const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm<PetFormData>({
         resolver: zodResolver(petSchema),
@@ -114,6 +117,12 @@ const RegisterPetPage: React.FC = () => {
             return;
         }
 
+        if (!privacyConsent) {
+            setConsentError('É necessário aceitar a Política de Privacidade para continuar.');
+            return;
+        }
+        setConsentError('');
+
         setUploading(true);
         try {
             // 1. Upload das fotos para o Cloudinary (Sem necessidade de cartão de crédito no Firebase)
@@ -158,7 +167,7 @@ const RegisterPetPage: React.FC = () => {
             setSuccess(true);
         } catch (error) {
             console.error('Erro ao cadastrar pet:', error);
-            alert('Erro ao salvar os dados. Verifique sua conexão.');
+            alert('Não foi possível enviar o anúncio. Verifique sua conexão e as fotos selecionadas, e tente novamente.');
         } finally {
             setUploading(false);
         }
@@ -454,6 +463,16 @@ const RegisterPetPage: React.FC = () => {
                                 </div>
 
                             </div>
+
+                            <PrivacyConsentCheckbox
+                                checked={privacyConsent}
+                                onChange={(checked) => {
+                                    setPrivacyConsent(checked);
+                                    if (checked) setConsentError('');
+                                }}
+                                id="registerPetPrivacyConsent"
+                                error={consentError}
+                            />
 
                             <div className="flex gap-4 pt-4">
                                 <Button type="button" variant="outline" onClick={prevStep} className="flex-1">Voltar</Button>

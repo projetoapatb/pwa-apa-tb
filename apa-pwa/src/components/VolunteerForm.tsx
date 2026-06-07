@@ -6,6 +6,7 @@ import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
+import { PrivacyConsentCheckbox } from './PrivacyConsentCheckbox';
 import { CheckCircle2, Send, LogIn, Clock, AlertTriangle, User as UserIcon, XCircle, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { LeadVolunteer } from '../types';
@@ -31,6 +32,8 @@ export const VolunteerForm: React.FC<VolunteerFormProps> = ({ defaultArea }) => 
     const [submitted, setSubmitted] = useState(false);
     const [currentLead, setCurrentLead] = useState<LeadVolunteer | null>(null);
     const [loadingLead, setLoadingLead] = useState(true);
+    const [privacyConsent, setPrivacyConsent] = useState(false);
+    const [consentError, setConsentError] = useState('');
 
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm<VolunteerFormValues>({
         resolver: zodResolver(volunteerSchema),
@@ -77,10 +80,20 @@ export const VolunteerForm: React.FC<VolunteerFormProps> = ({ defaultArea }) => 
     }, [profile, user, setValue]);
 
     const onSubmit = async (values: VolunteerFormValues) => {
+        if (!privacyConsent) {
+            setConsentError('É necessário aceitar a Política de Privacidade para continuar.');
+            return;
+        }
+        setConsentError('');
+
         try {
-            if (!user) throw new Error("Aguarde o carregamento do login...");
+            if (!user) {
+                alert('Faça login para enviar sua candidatura.');
+                return;
+            }
             if (!profile?.displayName || !profile?.phone) {
-                throw new Error("Seu perfil está incompleto. Preencha nome e telefone no seu perfil.");
+                alert('Complete seu nome e telefone no perfil antes de continuar.');
+                return;
             }
 
             await addDoc(collection(db, 'leads_volunteer'), {
@@ -94,14 +107,14 @@ export const VolunteerForm: React.FC<VolunteerFormProps> = ({ defaultArea }) => 
             });
             setSubmitted(true);
             reset();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Erro ao enviar interesse em voluntariado:", error);
-            alert(`Erro ao enviar: ${error.message || 'Tente novamente.'}`);
+            alert('Não foi possível enviar sua candidatura. Verifique sua conexão e tente novamente.');
         }
     };
 
     if (loadingLead) {
-        return <div className="p-20 text-center animate-pulse text-gray-400">Verificando status...</div>;
+        return <div className="p-20 text-center animate-pulse text-gray-400">Carregando informações...</div>;
     }
 
     // Se estiver pendente ou aprovado, bloqueia novo envio
@@ -244,7 +257,7 @@ export const VolunteerForm: React.FC<VolunteerFormProps> = ({ defaultArea }) => 
                                 <option value="limpeza">Limpeza e Manutenção</option>
                                 <option value="eventos">Eventos e Feiras</option>
                                 <option value="passeios">Passeios e Socialização</option>
-                                <option value="outros">Outros (Design, Redes Sociais, etc)</option>
+                                <option value="outros">Outros (design, redes sociais etc.)</option>
                             </select>
                             {errors.area && <span className="text-xs text-red-500 ml-2 mt-1 block">{errors.area.message}</span>}
                         </div>
@@ -258,6 +271,16 @@ export const VolunteerForm: React.FC<VolunteerFormProps> = ({ defaultArea }) => 
                                 className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-brand-acqua transition-all resize-none"
                             ></textarea>
                         </div>
+
+                        <PrivacyConsentCheckbox
+                            checked={privacyConsent}
+                            onChange={(checked) => {
+                                setPrivacyConsent(checked);
+                                if (checked) setConsentError('');
+                            }}
+                            id="volunteerPrivacyConsent"
+                            error={consentError}
+                        />
 
                         <Button
                             variant="primary"

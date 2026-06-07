@@ -75,7 +75,7 @@ const VolunteerPage: React.FC = () => {
                                 'Auxílio na limpeza e organização das baias',
                                 'Passeios recreativos e banhos nos doguinhos',
                                 'Apoio em feiras de adoção e eventos da ONG',
-                                'Social mídia, fotos e divulgação dos animais',
+                                'Redes sociais, fotos e divulgação dos animais',
                                 'Manutenção geral da sede (pintura, pequenos reparos)'
                             ].map((item, idx) => (
                                 <div key={idx} className="flex items-center gap-3 text-gray-700 font-medium">

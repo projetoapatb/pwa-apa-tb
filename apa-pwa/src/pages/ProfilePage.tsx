@@ -62,7 +62,7 @@ const ProfilePage: React.FC = () => {
             setTimeout(() => setSuccess(false), 3000);
         } catch (error) {
             console.error("Erro ao atualizar perfil:", error);
-            alert("Erro ao salvar alterações. Tente novamente.");
+            alert('Não foi possível salvar suas alterações. Verifique os dados e tente novamente.');
         } finally {
             setIsSaving(false);
         }

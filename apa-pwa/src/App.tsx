@@ -17,6 +17,7 @@ import LostPetsPage from './pages/LostPetsPage';
 import NewsPage from './pages/NewsPage';
 import PostDetailPage from './pages/PostDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import PrivacyPage from './pages/PrivacyPage';
 import LTPage from './pages/LTPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import AdminApprovalPage from './pages/admin/AdminApprovalPage';
@@ -356,15 +357,16 @@ function AppRoutes() {
               <div>
                 <h3 className="text-brand-green font-bold font-merriweather text-xl mb-4">APA Telêmaco Borba</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  Protegendo e encontrando lares para cães desde 2025. Trabalho voluntário voltado ao bem-estar animal.
+                  Protegendo e encontrando lares para animais desde 2025. Trabalho voluntário voltado ao bem-estar animal.
                 </p>
               </div>
               <div>
                 <h4 className="font-bold text-gray-800 mb-4">Links Rápidos</h4>
                 <div className="flex flex-col space-y-2 text-sm text-gray-500">
-                  <Link to="/adocao" className="hover:text-brand-green transition">Nossos Cães</Link>
+                  <Link to="/adocao" className="hover:text-brand-green transition">Nossos Animais</Link>
                   <Link to="/doacoes" className="hover:text-brand-green transition">Como Ajudar</Link>
                   <Link to="/voluntariado" className="hover:text-brand-green transition">Voluntariado</Link>
+                  <Link to="/privacidade" className="hover:text-brand-green transition text-xs text-gray-400">Política de Privacidade</Link>
                 </div>
               </div>
               <div>
@@ -381,6 +383,15 @@ function AppRoutes() {
         <div className="bg-gray-50 min-h-screen">
           <Navigation />
           <LoginPage />
+        </div>
+      } />
+
+      <Route path="/privacidade" element={
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <Navigation />
+          <div className="flex-grow">
+            <PrivacyPage />
+          </div>
         </div>
       } />
 

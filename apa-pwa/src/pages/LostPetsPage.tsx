@@ -18,6 +18,7 @@ const LostPetsPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [selectedPet, setSelectedPet] = useState<LostPet | null>(null);
+    const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         // Apenas anúncios aprovados no site público
@@ -33,6 +34,11 @@ const LostPetsPage: React.FC = () => {
                 }))
                 .filter((p: any) => p.moderationStatus === 'approved') as LostPet[];
             setPets(petList);
+            setLoadError(false);
+            setLoading(false);
+        }, (error) => {
+            console.error('Erro ao carregar mural de perdidos:', error);
+            setLoadError(true);
             setLoading(false);
         });
 
@@ -91,7 +97,15 @@ const LostPetsPage: React.FC = () => {
                 </div>
             )}
 
-            {loading ? (
+            {loadError ? (
+                <div className="text-center py-20 bg-white rounded-[3rem] shadow-sm">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2 font-merriweather">Não foi possível carregar o mural</h3>
+                    <p className="text-gray-500 max-w-sm mx-auto">Verifique sua conexão com a internet e tente novamente.</p>
+                    <Button variant="outline" className="mt-6" onClick={() => window.location.reload()}>
+                        Recarregar página
+                    </Button>
+                </div>
+            ) : loading ? (
                 <div className="flex justify-center py-20">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-green"></div>
                 </div>

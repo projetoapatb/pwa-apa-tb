@@ -5,6 +5,7 @@ import { db } from '../lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, serverTimestamp, limit } from 'firebase/firestore';
 import type { Pet, LeadAdoption } from '../types';
 import { Button } from '../components/ui/Button';
+import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import SEO from '../components/SEO';
@@ -23,6 +24,8 @@ const PetDetailPage: React.FC = () => {
     const [loadingLead, setLoadingLead] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [indexError, setIndexError] = useState(false);
+    const [privacyConsent, setPrivacyConsent] = useState(false);
+    const [consentError, setConsentError] = useState('');
 
     const { profile, user, loading: authLoading } = useAuth();
 
@@ -86,8 +89,14 @@ const PetDetailPage: React.FC = () => {
     const handleManifestInterest = async () => {
         if (!pet || !user || !profile) return;
 
+        if (!privacyConsent) {
+            setConsentError('É necessário aceitar a Política de Privacidade para continuar.');
+            return;
+        }
+        setConsentError('');
+
         if (!profile.displayName || !profile.phone) {
-            alert("Por favor, complete seu nome e telefone no seu perfil antes de manifestar interesse.");
+            alert('Complete seu nome e telefone no perfil antes de manifestar interesse.');
             return;
         }
 
@@ -119,9 +128,9 @@ const PetDetailPage: React.FC = () => {
 
             setSubmitted(true);
             setLoadingLead(false);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Erro ao enviar interesse:", error);
-            alert(`Erro ao manifestar interesse: ${error.message || 'Tente novamente.'}`);
+            alert('Não foi possível registrar seu interesse. Verifique sua conexão e tente novamente.');
         } finally {
             setIsCreating(false);
         }
@@ -139,6 +148,7 @@ const PetDetailPage: React.FC = () => {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
                 <h2 className="text-2xl font-bold text-gray-800">Animal não encontrado</h2>
+                <p className="text-gray-500 mt-2">Este anúncio pode ter sido removido ou o link está incorreto.</p>
                 <Link to="/adocao" className="mt-4 text-brand-green font-bold flex items-center">
                     <ArrowLeft size={20} className="mr-2" /> Voltar para adoção
                 </Link>
@@ -299,15 +309,15 @@ const PetDetailPage: React.FC = () => {
                                             </div>
                                         </div>
                                     ) : (loadingLead || isCreating) ? (
-                                        <div className="py-10 text-center animate-pulse text-gray-400">Verificando interesse anterior...</div>
+                                        <div className="py-10 text-center animate-pulse text-gray-400">Carregando...</div>
                                     ) : indexError ? (
-                                        <div className="p-6 bg-red-50 border-2 border-red-100 rounded-[2rem] text-center">
-                                            <Info size={32} className="text-red-400 mx-auto mb-4" />
-                                            <p className="text-sm text-red-700 font-bold mb-2">Configuração Pendente</p>
-                                            <p className="text-[10px] text-red-600 mb-4">
-                                                O sistema precisa de um índice no Firestore para verificar seu status. Verifique o console ou o guia de índices.
+                                        <div className="p-6 bg-orange-50 border-2 border-orange-100 rounded-[2rem] text-center">
+                                            <Info size={32} className="text-brand-orange mx-auto mb-4" />
+                                            <p className="text-sm text-gray-700 font-bold mb-2">Não foi possível verificar seu interesse</p>
+                                            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                                                Tente recarregar a página. Se o problema continuar, entre em contato com a APA ou manifeste interesse pelo seu perfil.
                                             </p>
-                                            <Link to="/perfil" className="text-[10px] font-bold text-red-800 underline">Abrir Painel</Link>
+                                            <Link to="/perfil" className="text-xs font-bold text-brand-green underline">Ir para o perfil</Link>
                                         </div>
                                     ) : currentLead && currentLead.status !== 'rejected' ? (
                                         <div className={`p-8 rounded-[2rem] text-center border-2 transition-all ${currentLead.status === 'approved' ? 'bg-brand-green/5 border-brand-green/20' : 'bg-brand-orange/5 border-brand-orange/20'}`}>
@@ -369,6 +379,16 @@ const PetDetailPage: React.FC = () => {
                                                     * Ao clicar abaixo, esses dados serão enviados para que possamos entrar em contato.
                                                 </p>
                                             </div>
+
+                                            <PrivacyConsentCheckbox
+                                                checked={privacyConsent}
+                                                onChange={(checked) => {
+                                                    setPrivacyConsent(checked);
+                                                    if (checked) setConsentError('');
+                                                }}
+                                                id="adoptionPrivacyConsent"
+                                                error={consentError}
+                                            />
 
                                             <Button
                                                 onClick={handleManifestInterest}
