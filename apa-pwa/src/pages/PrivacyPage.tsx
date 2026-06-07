@@ -94,10 +94,9 @@ const PrivacyPage: React.FC = () => {
                 <p className="font-bold text-gray-800 mb-1">APA Telêmaco Borba</p>
                 <p>
                   E-mail para privacidade e dados pessoais:{' '}
-                  <span className="text-brand-green font-medium">[definir e-mail oficial da APA]</span>
-                </p>
-                <p className="text-gray-400 mt-2 text-xs">
-                  A organização deve informar aqui o endereço de e-mail ou outro canal oficial de atendimento.
+                  <a href="mailto:projeto.apa.tb@gmail.com" className="text-brand-green font-medium hover:underline">
+                    projeto.apa.tb@gmail.com
+                  </a>
                 </p>
               </div>
             </div>
