@@ -109,6 +109,8 @@ const LostPetsManagementPage: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja remover este anúncio permanentemente?")) return;
+        // TODO: Exclusão real da imagem na Cloudinary exige backend ou assinatura segura.
+        // Não usar CLOUDINARY_API_SECRET no front-end.
         try {
             await deleteDoc(doc(db, 'lost_pets', id));
         } catch (error) {

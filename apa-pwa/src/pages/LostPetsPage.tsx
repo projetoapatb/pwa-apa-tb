@@ -10,6 +10,14 @@ import SEO from '../components/SEO';
 import { LostPetForm } from '../components/LostPetForm';
 import type { LostPet } from '../types';
 import { maskPhone } from '../utils/masks';
+import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
+
+const LOST_PET_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop';
+
+const getLostPetImageSrc = (photoUrl?: string) => {
+    if (!photoUrl) return LOST_PET_FALLBACK_IMAGE;
+    return getOptimizedCloudinaryUrl(photoUrl);
+};
 
 
 const LostPetsPage: React.FC = () => {
@@ -128,7 +136,7 @@ const LostPetsPage: React.FC = () => {
                                 onClick={() => setSelectedPet(pet)}
                             >
                                 <img
-                                    src={pet.photoUrl || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop'}
+                                    src={getLostPetImageSrc(pet.photoUrl)}
                                     alt={pet.name}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                 />
@@ -194,7 +202,7 @@ const LostPetsPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2">
                             <div className="h-64 md:h-[500px] sticky top-0 md:relative">
                                 <img
-                                    src={selectedPet.photoUrl || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop'}
+                                    src={getLostPetImageSrc(selectedPet.photoUrl)}
                                     className="w-full h-full object-cover"
                                     alt={selectedPet.name}
                                 />

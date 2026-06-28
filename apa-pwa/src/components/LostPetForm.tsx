@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -7,8 +7,11 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
 import { PrivacyConsentCheckbox } from './PrivacyConsentCheckbox';
-import { CheckCircle2, Send, Camera, MapPin, Phone, Calendar, Info } from 'lucide-react';
+import { ImageAdjuster } from './ImageAdjuster';
+import { CheckCircle2, Send, Camera, MapPin, Phone, Calendar, Info, X, Link2 } from 'lucide-react';
 import { maskPhone, validatePhone } from '../utils/masks';
+import { compressImage, validateImageFile } from '../utils/imageCompression';
+import { uploadImageToCloudinary } from '../lib/cloudinary';
 
 
 const lostPetSchema = z.object({
@@ -27,6 +30,8 @@ const lostPetSchema = z.object({
 
 type LostPetFormValues = z.infer<typeof lostPetSchema>;
 
+type UploadStatus = '' | 'preparing' | 'uploading' | 'saving';
+
 interface LostPetFormProps {
     onCancel?: () => void;
 }
@@ -36,6 +41,15 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
     const [submitted, setSubmitted] = useState(false);
     const [privacyConsent, setPrivacyConsent] = useState(false);
     const [consentError, setConsentError] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [fileError, setFileError] = useState('');
+    const [uploadStatus, setUploadStatus] = useState<UploadStatus>('');
+    const [useManualLink, setUseManualLink] = useState(false);
+    const [pendingAdjustment, setPendingAdjustment] = useState<{ file: File; url: string } | null>(null);
+    const [originalSourceFile, setOriginalSourceFile] = useState<File | null>(null);
+    const previewUrlRef = useRef<string | null>(null);
+    const adjustmentUrlRef = useRef<string | null>(null);
 
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue, watch } = useForm<LostPetFormValues>({
         resolver: zodResolver(lostPetSchema),
@@ -43,19 +57,109 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
             status: 'perdido',
             species: 'cachorro',
             hasReward: false,
-            rewardValue: ''
+            rewardValue: '',
+            photoUrl: '',
         }
     });
 
     const hasReward = watch('hasReward');
+    const isBusy = isSubmitting || uploadStatus !== '';
 
-    // Auto-preenchimento
+    const clearAdjustment = () => {
+        if (adjustmentUrlRef.current) {
+            URL.revokeObjectURL(adjustmentUrlRef.current);
+            adjustmentUrlRef.current = null;
+        }
+        setPendingAdjustment(null);
+    };
+
+    const setPreviewFromFile = (file: File, url: string) => {
+        clearPreview();
+        previewUrlRef.current = url;
+        setPreviewUrl(url);
+        setSelectedFile(file);
+        setUseManualLink(false);
+        setValue('photoUrl', '');
+    };
+
+    const clearPreview = () => {
+        if (previewUrlRef.current) {
+            URL.revokeObjectURL(previewUrlRef.current);
+            previewUrlRef.current = null;
+        }
+        setPreviewUrl(null);
+    };
+
     useEffect(() => {
         if (profile?.phone) {
             setValue('contactPhone', maskPhone(profile.phone));
         }
     }, [profile, setValue]);
 
+    useEffect(() => {
+        return () => {
+            clearPreview();
+            clearAdjustment();
+        };
+    }, []);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        setFileError('');
+        event.target.value = '';
+
+        if (!file) return;
+
+        const validationError = validateImageFile(file);
+        if (validationError) {
+            setFileError(validationError);
+            return;
+        }
+
+        clearPreview();
+        clearAdjustment();
+        setSelectedFile(null);
+        setOriginalSourceFile(file);
+
+        const objectUrl = URL.createObjectURL(file);
+        adjustmentUrlRef.current = objectUrl;
+        setPendingAdjustment({ file, url: objectUrl });
+    };
+
+    const handleRemoveFile = () => {
+        clearPreview();
+        clearAdjustment();
+        setSelectedFile(null);
+        setOriginalSourceFile(null);
+        setFileError('');
+    };
+
+    const handleAdjustAgain = () => {
+        if (!originalSourceFile || isBusy) return;
+
+        clearPreview();
+        setSelectedFile(null);
+        clearAdjustment();
+
+        const objectUrl = URL.createObjectURL(originalSourceFile);
+        adjustmentUrlRef.current = objectUrl;
+        setPendingAdjustment({ file: originalSourceFile, url: objectUrl });
+    };
+
+    const handleAdjustmentConfirm = (file: File, url: string) => {
+        clearAdjustment();
+        setPreviewFromFile(file, url);
+    };
+
+    const handleUseOriginalImage = (file: File, url: string) => {
+        clearAdjustment();
+        setPreviewFromFile(file, url);
+    };
+
+    const handleAdjustmentCancel = () => {
+        clearAdjustment();
+        setFileError('');
+    };
 
     const onSubmit = async (values: LostPetFormValues) => {
         if (!privacyConsent) {
@@ -64,28 +168,95 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
         }
         setConsentError('');
 
+        if (!user) {
+            alert('Faça login para publicar um anúncio.');
+            return;
+        }
+
+        const manualPhotoUrl = values.photoUrl?.trim() || '';
+
+        if (!selectedFile && !manualPhotoUrl) {
+            setFileError('Envie uma foto ou informe um link de imagem.');
+            return;
+        }
+
+        if (selectedFile && manualPhotoUrl) {
+            setFileError('Use apenas upload de arquivo ou link manual, não os dois ao mesmo tempo.');
+            return;
+        }
+
         try {
-            if (!user) {
-                alert('Faça login para publicar um anúncio.');
-                return;
+            let photoUrl = manualPhotoUrl;
+            let imagePayload: Record<string, unknown> = {};
+
+            if (selectedFile) {
+                setUploadStatus('preparing');
+                const compressed = await compressImage(selectedFile);
+
+                setUploadStatus('uploading');
+                const uploaded = await uploadImageToCloudinary(compressed.file, {
+                    folder: 'apa/lost-pets',
+                    tags: ['lost-pet', 'apa'],
+                });
+
+                photoUrl = uploaded.secure_url;
+                imagePayload = {
+                    cloudinaryPublicId: uploaded.public_id,
+                    imageProvider: 'cloudinary',
+                    originalImageSize: compressed.originalSize,
+                    compressedImageSize: compressed.compressedSize,
+                    imageWidth: uploaded.width ?? compressed.width,
+                    imageHeight: uploaded.height ?? compressed.height,
+                    imageDeletedAt: null,
+                };
+            } else if (manualPhotoUrl) {
+                imagePayload = {
+                    imageProvider: 'external',
+                    imageDeletedAt: null,
+                };
             }
+
+            setUploadStatus('saving');
+
             await addDoc(collection(db, 'lost_pets'), {
-                ...values,
+                name: values.name,
+                species: values.species,
+                status: values.status,
+                description: values.description,
+                lastSeenLocation: values.lastSeenLocation,
                 lastSeenDate: new Date(values.lastSeenDate),
-                moderationStatus: 'pending',
-                userId: user.uid,
+                contactPhone: values.contactPhone,
                 hasReward: values.hasReward || false,
                 rewardValue: values.rewardValue || '',
+                photoUrl,
+                ...imagePayload,
+                moderationStatus: 'pending',
+                userId: user.uid,
                 createdAt: serverTimestamp(),
             });
+
             setSubmitted(true);
             reset();
-            // Removido o fechamento automático para que o usuário veja a confirmação
+            handleRemoveFile();
+            setUseManualLink(false);
         } catch (error) {
-            console.error("Erro ao anunciar no mural:", error);
-            alert('Não foi possível enviar seu anúncio. Verifique os dados e tente novamente.');
+            console.error('Erro ao anunciar no mural:', error);
+            const message = error instanceof Error
+                ? error.message
+                : 'Não foi possível enviar seu anúncio. Verifique os dados e tente novamente.';
+            alert(message);
+        } finally {
+            setUploadStatus('');
         }
     };
+
+    const statusMessage = uploadStatus === 'preparing'
+        ? 'Preparando imagem...'
+        : uploadStatus === 'uploading'
+            ? 'Enviando foto...'
+            : uploadStatus === 'saving'
+                ? 'Salvando anúncio...'
+                : '';
 
     if (submitted) {
         return (
@@ -140,28 +311,92 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-2">Nome (ou "Sem nome")</label>
-                    <input
-                        {...register('name')}
-                        placeholder="Ex: Totó"
-                        className={`w-full p-4 bg-gray-50 border-2 rounded-2xl outline-none transition-all ${errors.name ? 'border-red-400' : 'border-gray-100 focus:border-brand-orange'}`}
+            <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-2">Nome (ou "Sem nome")</label>
+                <input
+                    {...register('name')}
+                    placeholder="Ex: Totó"
+                    className={`w-full p-4 bg-gray-50 border-2 rounded-2xl outline-none transition-all ${errors.name ? 'border-red-400' : 'border-gray-100 focus:border-brand-orange'}`}
+                />
+                {errors.name && <span className="text-xs text-red-500 ml-2 mt-1 block">{errors.name.message}</span>}
+            </div>
+
+            <div className="space-y-3">
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-2">Foto do animal</label>
+                <p className="text-sm text-gray-500 ml-2 leading-relaxed">
+                    Envie uma foto nítida do animal. O sistema reduzirá o tamanho da imagem antes do envio.
+                </p>
+
+                {pendingAdjustment ? (
+                    <ImageAdjuster
+                        file={pendingAdjustment.file}
+                        imageUrl={pendingAdjustment.url}
+                        onConfirm={handleAdjustmentConfirm}
+                        onUseOriginal={handleUseOriginalImage}
+                        onCancel={handleAdjustmentCancel}
                     />
-                    {errors.name && <span className="text-xs text-red-500 ml-2 mt-1 block">{errors.name.message}</span>}
-                </div>
-                <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-2">Foto (Link da imagem)</label>
-                    <div className="relative">
-                        <Camera className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                ) : previewUrl ? (
+                    <div className="space-y-2 max-w-xs">
+                        <div className="relative rounded-2xl overflow-hidden border-2 border-gray-100 bg-gray-50">
+                            <img src={previewUrl} alt="Pré-visualização" className="w-full aspect-[4/3] object-cover" />
+                            <button
+                                type="button"
+                                onClick={handleRemoveFile}
+                                className="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-gray-600 hover:text-red-500 shadow-sm"
+                                aria-label="Remover foto"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        {originalSourceFile && (
+                            <button
+                                type="button"
+                                onClick={handleAdjustAgain}
+                                className="text-xs font-bold text-brand-green hover:underline ml-2"
+                                disabled={isBusy}
+                            >
+                                Ajustar novamente
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <label className="flex flex-col items-center justify-center gap-2 p-8 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-brand-orange/50 hover:bg-brand-orange/5 transition-all">
+                        <Camera size={32} className="text-gray-300" />
+                        <span className="text-sm font-bold text-gray-600">Selecionar foto</span>
+                        <span className="text-xs text-gray-400">JPG, PNG ou WEBP · até 5 MB</span>
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            disabled={isBusy}
+                        />
+                    </label>
+                )}
+
+                {fileError && <p className="text-xs text-red-500 ml-2">{fileError}</p>}
+
+                {!selectedFile && !pendingAdjustment && (
+                    <button
+                        type="button"
+                        onClick={() => setUseManualLink((prev) => !prev)}
+                        className="text-xs font-bold text-brand-green hover:underline ml-2 flex items-center gap-1"
+                    >
+                        <Link2 size={14} />
+                        {useManualLink ? 'Ocultar link manual' : 'Ou usar link de imagem'}
+                    </button>
+                )}
+
+                {useManualLink && !selectedFile && !pendingAdjustment && (
+                    <div className="relative animate-fade-in">
                         <input
                             {...register('photoUrl')}
                             placeholder="https://..."
-                            className="w-full p-4 pl-12 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none focus:border-brand-orange transition-all"
+                            className={`w-full p-4 bg-gray-50 border-2 rounded-2xl outline-none transition-all ${errors.photoUrl ? 'border-red-400' : 'border-gray-100 focus:border-brand-orange'}`}
                         />
+                        {errors.photoUrl && <span className="text-xs text-red-500 ml-2 mt-1 block">{errors.photoUrl.message}</span>}
                     </div>
-                    <p className="text-[10px] text-gray-300 ml-2 mt-1">Dica: use um link de imagem público (por exemplo, Imgur ou rede social).</p>
-                </div>
+                )}
             </div>
 
             <div>
@@ -217,7 +452,6 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
                 {errors.contactPhone && <span className="text-xs text-red-500 ml-2 mt-1 block">{errors.contactPhone.message}</span>}
             </div>
 
-
             <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
                 <div className="flex items-center gap-3">
                     <input
@@ -243,6 +477,10 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
                 )}
             </div>
 
+            {statusMessage && (
+                <p className="text-sm text-brand-green font-medium text-center animate-pulse">{statusMessage}</p>
+            )}
+
             <PrivacyConsentCheckbox
                 checked={privacyConsent}
                 onChange={(checked) => {
@@ -255,7 +493,7 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
 
             <div className="flex gap-4 pt-4">
                 {onCancel && (
-                    <Button type="button" variant="ghost" onClick={onCancel} className="flex-grow py-4 border-2 border-transparent hover:border-gray-100 rounded-2xl">
+                    <Button type="button" variant="ghost" onClick={onCancel} className="flex-grow py-4 border-2 border-transparent hover:border-gray-100 rounded-2xl" disabled={isBusy}>
                         Cancelar
                     </Button>
                 )}
@@ -263,7 +501,7 @@ export const LostPetForm: React.FC<LostPetFormProps> = ({ onCancel }) => {
                     type="submit"
                     variant="orange"
                     className="flex-grow py-4 text-lg shadow-lg shadow-orange-900/20 rounded-2xl"
-                    isLoading={isSubmitting}
+                    isLoading={isBusy}
                 >
                     Publicar Agora
                     <Send size={18} className="ml-2" />

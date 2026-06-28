@@ -10,6 +10,14 @@ import { PetCard } from '../components/PetCard';
 import { useNavigate, Link } from 'react-router-dom';
 import { useFlags } from '../contexts/FeatureFlagContext';
 import { MapPin, ArrowRight } from 'lucide-react';
+import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
+
+const LOST_PET_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop';
+
+const getLostPetImageSrc = (photoUrl?: string) => {
+    if (!photoUrl) return LOST_PET_FALLBACK_IMAGE;
+    return getOptimizedCloudinaryUrl(photoUrl);
+};
 
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
@@ -225,7 +233,7 @@ const HomePage: React.FC = () => {
                                     className="group relative h-80 rounded-[2.5rem] overflow-hidden shadow-lg hover:shadow-2xl transition-all"
                                 >
                                     <img
-                                        src={pet.photoUrl || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop'}
+                                        src={getLostPetImageSrc(pet.photoUrl)}
                                         alt={pet.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
