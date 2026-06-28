@@ -140,6 +140,13 @@ export interface LostPet {
     rewardValue?: string;
     userId: string;
     createdAt: any;
+    cloudinaryPublicId?: string;
+    imageProvider?: 'cloudinary' | 'external' | string;
+    originalImageSize?: number;
+    compressedImageSize?: number;
+    imageWidth?: number;
+    imageHeight?: number;
+    imageDeletedAt?: string | null;
 }
 export interface LeadLT {
     id: string;
