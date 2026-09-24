@@ -52,7 +52,8 @@ import {
   User,
   X as CloseIcon,
   LogOut,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown
 } from 'lucide-react';
 
 const AdminLayout = ({ children, title }: { children: React.ReactNode, title?: string }) => {
@@ -210,15 +211,64 @@ const SidebarFooter = ({ signOut }: { signOut: () => void }) => (
   </div>
 );
 
+const SiteFooter = () => (
+  <footer className="bg-gray-50 p-10 md:p-12 border-t border-gray-100 mt-auto">
+    <div className="container mx-auto grid md:grid-cols-3 gap-10 md:gap-12">
+      <div>
+        <h3 className="text-brand-green font-bold font-merriweather text-xl mb-4">APA Telêmaco Borba</h3>
+        <p className="text-gray-500 text-sm leading-relaxed">
+          Protegendo e encontrando lares para animais. Trabalho voluntário voltado ao bem-estar animal.
+        </p>
+      </div>
+      <div>
+        <h4 className="font-bold text-gray-800 mb-4">Links Rápidos</h4>
+        <div className="flex flex-col space-y-2 text-sm text-gray-500">
+          <Link to="/adocao" className="hover:text-brand-green transition">Nossos Animais</Link>
+          <Link to="/doacoes" className="hover:text-brand-green transition">Como Ajudar</Link>
+          <Link to="/voluntariado" className="hover:text-brand-green transition">Voluntariado</Link>
+          <Link to="/perdidos" className="hover:text-brand-green transition">Mural de Perdidos</Link>
+          <Link to="/privacidade" className="hover:text-brand-green transition text-xs text-gray-400">Política de Privacidade</Link>
+        </div>
+      </div>
+      <div>
+        <h4 className="font-bold text-gray-800 mb-4">Contato</h4>
+        <p className="text-sm text-gray-500 italic">"Pela dignidade dos animais."</p>
+        <a
+          href="mailto:projeto.apa.tb@gmail.com"
+          className="inline-block mt-3 text-sm font-bold text-brand-green hover:underline"
+        >
+          projeto.apa.tb@gmail.com
+        </a>
+        <div className="mt-4 text-xs font-bold text-brand-green">© 2026 SchCodes · Wesley-GL23</div>
+      </div>
+    </div>
+  </footer>
+);
+
+const SiteLayout = ({ children, className = 'bg-gray-50' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`min-h-screen flex flex-col ${className}`}>
+    <Navigation />
+    <div className="flex-grow">{children}</div>
+    <SiteFooter />
+  </div>
+);
+
 const Navigation = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const { flags } = useFlags();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
   return (
     <header className="bg-brand-green text-white p-3 md:p-4 shadow-lg sticky top-0 z-[100]">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="flex items-center group">
+      <div className="container mx-auto flex justify-between items-center relative z-[120]">
+        <Link to="/" className="flex items-center group" onClick={() => setIsMenuOpen(false)}>
           <img src="/logo.png" alt="Logo APA" className="h-12 md:h-20 w-auto invert brightness-0 group-hover:scale-105 transition-transform" />
         </Link>
 
@@ -229,15 +279,17 @@ const Navigation = () => {
             <NavLink to="/adocao" className={({ isActive }) => isActive ? "text-brand-acqua transition font-bold text-sm uppercase tracking-widest border-b-2 border-brand-acqua pb-1" : "hover:text-brand-acqua transition font-bold text-sm uppercase tracking-widest"}>Adoção</NavLink>
           )}
           <div className="relative group">
-            <button className="hover:text-brand-acqua transition font-bold text-sm uppercase tracking-widest flex items-center gap-1">
-              Como Ajudar <Menu size={14} />
+            <button type="button" className="hover:text-brand-acqua transition font-bold text-sm uppercase tracking-widest flex items-center gap-1">
+              Como Ajudar <ChevronDown size={14} />
             </button>
             <div className="absolute top-full left-0 bg-brand-green border border-green-800 rounded-2xl shadow-2xl p-4 py-6 w-56 opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all z-[110] space-y-4">
               {flags.volunteers && (
                 <NavLink to="/voluntariado" className={({ isActive }) => isActive ? "block text-brand-acqua transition font-bold text-xs uppercase tracking-widest border-b border-green-800/50 pb-3" : "block hover:text-brand-acqua transition font-bold text-xs uppercase tracking-widest border-b border-green-800/50 pb-3"}>Seja Voluntário</NavLink>
               )}
               <NavLink to="/lar-temporario" className={({ isActive }) => isActive ? "block text-brand-orange transition font-bold text-xs uppercase tracking-widest" : "block hover:text-brand-acqua transition font-bold text-xs uppercase tracking-widest text-brand-orange"}>Ser Lar Temporário</NavLink>
-              <NavLink to="/doacoes" className={({ isActive }) => isActive ? "block text-brand-acqua transition font-bold text-xs uppercase tracking-widest" : "block hover:text-brand-acqua transition font-bold text-xs uppercase tracking-widest"}>Fazer Doação</NavLink>
+              {flags.donations !== false && (
+                <NavLink to="/doacoes" className={({ isActive }) => isActive ? "block text-brand-acqua transition font-bold text-xs uppercase tracking-widest" : "block hover:text-brand-acqua transition font-bold text-xs uppercase tracking-widest"}>Fazer Doação</NavLink>
+              )}
             </div>
           </div>
           {flags.stories && (
@@ -245,12 +297,16 @@ const Navigation = () => {
           )}
           <NavLink to="/perdidos" className={({ isActive }) => isActive ? "text-brand-acqua transition font-bold text-sm uppercase tracking-widest border-b-2 border-brand-acqua pb-1" : "hover:text-brand-acqua transition font-bold text-sm uppercase tracking-widest"}>Mural de Perdidos</NavLink>
 
-          {user && (
-            <NavLink to="/anunciar-pet" className={({ isActive }) => isActive ? "text-brand-orange transition font-bold text-sm uppercase tracking-widest border-b-2 border-brand-orange pb-1" : "hover:text-brand-orange transition font-bold text-sm uppercase tracking-widest"}>Anunciar Pet</NavLink>
+          {flags.adoption && (
+            user ? (
+              <NavLink to="/anunciar-pet" className={({ isActive }) => isActive ? "text-brand-orange transition font-bold text-sm uppercase tracking-widest border-b-2 border-brand-orange pb-1" : "hover:text-brand-orange transition font-bold text-sm uppercase tracking-widest"}>Anunciar Pet</NavLink>
+            ) : (
+              <NavLink to="/login" state={{ from: { pathname: '/anunciar-pet' } }} className="hover:text-brand-orange transition font-bold text-sm uppercase tracking-widest text-brand-orange/90">Anunciar Pet</NavLink>
+            )
           )}
 
           {loading ? (
-            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           ) : user ? (
             <div className="flex items-center space-x-4">
               {isAdmin && (
@@ -270,8 +326,10 @@ const Navigation = () => {
                 <span>Perfil</span>
               </NavLink>
               <button
+                type="button"
                 onClick={() => signOut()}
                 className="text-xs font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition flex items-center space-x-2"
+                aria-label="Sair"
               >
                 <LogOut size={14} />
               </button>
@@ -281,35 +339,67 @@ const Navigation = () => {
           )}
         </nav>
 
-        {/* Mobile Hamburger */}
         <button
-          className="md:hidden p-2 text-white hover:bg-white/10 rounded-full transition-colors"
+          type="button"
+          className="md:hidden p-2 text-white hover:bg-white/10 rounded-full transition-colors relative z-[120]"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={isMenuOpen}
         >
           {isMenuOpen ? <CloseIcon size={28} /> : <Menu size={28} />}
         </button>
       </div>
 
-      {/* Mobile Menu Tray (Bandeja) */}
-      <div className={`fixed inset-0 bg-brand-green z-[90] transition-transform duration-500 ease-in-out md:hidden ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-        <div className="flex flex-col h-full justify-center items-center p-8 space-y-6">
-          <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Home</Link>
-          {flags.adoption && (
-            <Link to="/adocao" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Adoção</Link>
-          )}
-          {flags.donations && (
-            <Link to="/doacoes" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Doações</Link>
-          )}
-          <Link to="/voluntariado" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Seja Voluntário</Link>
-          <Link to="/lar-temporario" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather text-brand-orange">Ser Lar Temporário</Link>
-          {flags.stories && (
-            <Link to="/noticias" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Histórias</Link>
-          )}
-          <Link to="/perdidos" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Mural de Perdidos</Link>
+      {/* Mobile Menu */}
+      <div
+        className={`fixed inset-0 bg-brand-green z-[110] transition-transform duration-500 ease-in-out md:hidden ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}
+        aria-hidden={!isMenuOpen}
+      >
+        <div className="flex flex-col h-full pt-24 pb-10 px-8 overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(false)}
+            className="absolute top-5 right-5 p-2 rounded-full hover:bg-white/10"
+            aria-label="Fechar menu"
+          >
+            <CloseIcon size={28} />
+          </button>
 
-          <div className="pt-8 border-t border-white/10 w-full max-w-xs text-center space-y-4">
+          <nav className="flex flex-col items-center justify-center flex-grow space-y-5 text-center">
+            <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Home</Link>
+            {flags.adoption && (
+              <Link to="/adocao" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Adoção</Link>
+            )}
+            {(flags.donations !== false) && (
+              <Link to="/doacoes" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Doações</Link>
+            )}
+            {flags.volunteers !== false && (
+              <Link to="/voluntariado" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Seja Voluntário</Link>
+            )}
+            <Link to="/lar-temporario" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather text-brand-orange">Ser Lar Temporário</Link>
+            {flags.stories && (
+              <Link to="/noticias" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Histórias</Link>
+            )}
+            <Link to="/perdidos" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather hover:text-brand-acqua">Mural de Perdidos</Link>
+            {flags.adoption && (
+              user ? (
+                <Link to="/anunciar-pet" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather text-brand-orange">Anunciar Pet</Link>
+              ) : (
+                <Link to="/login" state={{ from: { pathname: '/anunciar-pet' } }} onClick={() => setIsMenuOpen(false)} className="text-xl font-bold font-merriweather text-brand-orange">Anunciar Pet</Link>
+              )
+            )}
+          </nav>
+
+          <div className="pt-8 border-t border-white/10 w-full max-w-xs mx-auto text-center space-y-3">
             {user ? (
               <>
+                <Link
+                  to="/perfil"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block bg-white text-brand-green py-4 rounded-3xl font-black uppercase tracking-widest text-sm"
+                >
+                  Meu Perfil
+                </Link>
                 {isAdmin && (
                   <Link
                     to="/admin"
@@ -320,6 +410,7 @@ const Navigation = () => {
                   </Link>
                 )}
                 <button
+                  type="button"
                   onClick={() => { signOut(); setIsMenuOpen(false); }}
                   className="w-full py-4 border border-white/20 rounded-3xl font-black uppercase tracking-widest text-xs text-red-200"
                 >
@@ -332,7 +423,7 @@ const Navigation = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className="block bg-brand-orange text-white py-4 rounded-3xl font-black uppercase tracking-widest text-sm"
               >
-                Acessar Minha Conta
+                Entrar / Criar Conta
               </Link>
             )}
           </div>
@@ -345,140 +436,84 @@ const Navigation = () => {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Rotas Públicas */}
       <Route path="/" element={
-        <div className="min-h-screen bg-white flex flex-col">
-          <Navigation />
-          <div className="flex-grow">
-            <HomePage />
-          </div>
-          <footer className="bg-gray-50 p-12 border-t border-gray-100 mt-20">
-            <div className="container mx-auto grid md:grid-cols-3 gap-12">
-              <div>
-                <h3 className="text-brand-green font-bold font-merriweather text-xl mb-4">APA Telêmaco Borba</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  Protegendo e encontrando lares para animais desde 2025. Trabalho voluntário voltado ao bem-estar animal.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-800 mb-4">Links Rápidos</h4>
-                <div className="flex flex-col space-y-2 text-sm text-gray-500">
-                  <Link to="/adocao" className="hover:text-brand-green transition">Nossos Animais</Link>
-                  <Link to="/doacoes" className="hover:text-brand-green transition">Como Ajudar</Link>
-                  <Link to="/voluntariado" className="hover:text-brand-green transition">Voluntariado</Link>
-                  <Link to="/privacidade" className="hover:text-brand-green transition text-xs text-gray-400">Política de Privacidade</Link>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-800 mb-4">Contato</h4>
-                <p className="text-sm text-gray-500 italic">"Pela dignidade dos animais."</p>
-                <div className="mt-4 text-xs font-bold text-brand-green">© 2026 SchCodes · Wesley-GL23</div>
-              </div>
-            </div>
-          </footer>
-        </div>
+        <SiteLayout className="bg-white">
+          <HomePage />
+        </SiteLayout>
       } />
 
       <Route path="/login" element={
-        <div className="bg-gray-50 min-h-screen">
-          <Navigation />
+        <SiteLayout>
           <LoginPage />
-        </div>
+        </SiteLayout>
       } />
 
       <Route path="/privacidade" element={
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Navigation />
-          <div className="flex-grow">
-            <PrivacyPage />
-          </div>
-        </div>
+        <SiteLayout>
+          <PrivacyPage />
+        </SiteLayout>
       } />
 
       <Route path="/adocao" element={
         <FlaggedRoute flag="adoption">
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <div className="flex-grow">
-              <AdoptionPage />
-            </div>
-          </div>
+          <SiteLayout>
+            <AdoptionPage />
+          </SiteLayout>
         </FlaggedRoute>
       } />
 
       <Route path="/adocao/:id" element={
         <FlaggedRoute flag="adoption">
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <div className="flex-grow">
-              <PetDetailPage />
-            </div>
-          </div>
+          <SiteLayout>
+            <PetDetailPage />
+          </SiteLayout>
         </FlaggedRoute>
       } />
 
       <Route path="/doacoes" element={
         <FlaggedRoute flag="donations">
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <div className="flex-grow">
-              <DonationPage />
-            </div>
-          </div>
+          <SiteLayout>
+            <DonationPage />
+          </SiteLayout>
         </FlaggedRoute>
       } />
+
       <Route path="/lar-temporario" element={
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Navigation />
-          <div className="flex-grow">
-            <LTPage />
-          </div>
-        </div>
+        <SiteLayout>
+          <LTPage />
+        </SiteLayout>
       } />
 
       <Route path="/voluntariado" element={
         <FlaggedRoute flag="volunteers">
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <div className="flex-grow">
-              <VolunteerPage />
-            </div>
-          </div>
+          <SiteLayout>
+            <VolunteerPage />
+          </SiteLayout>
         </FlaggedRoute>
       } />
 
       <Route path="/perdidos" element={
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Navigation />
-          <div className="flex-grow">
-            <LostPetsPage />
-          </div>
-        </div>
+        <SiteLayout>
+          <LostPetsPage />
+        </SiteLayout>
       } />
 
       <Route path="/noticias/:id" element={
         <FlaggedRoute flag="stories">
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <div className="flex-grow">
-              <PostDetailPage />
-            </div>
-          </div>
+          <SiteLayout>
+            <PostDetailPage />
+          </SiteLayout>
         </FlaggedRoute>
       } />
 
       <Route path="/noticias" element={
         <FlaggedRoute flag="stories">
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <div className="flex-grow">
-              <NewsPage />
-            </div>
-          </div>
+          <SiteLayout>
+            <NewsPage />
+          </SiteLayout>
         </FlaggedRoute>
       } />
 
-      {/* Rotas Privadas (Admin) */}
       <Route
         path="/admin/*"
         element={
@@ -508,19 +543,23 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="/perfil" element={<ProtectedRoute><div className="min-h-screen bg-gray-50 flex flex-col"><Navigation /><div className="flex-grow"><ProfilePage /></div></div></ProtectedRoute>} />
+
+      <Route path="/perfil" element={
+        <ProtectedRoute>
+          <SiteLayout>
+            <ProfilePage />
+          </SiteLayout>
+        </ProtectedRoute>
+      } />
 
       <Route path="/anunciar-pet" element={
         <ProtectedRoute>
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <div className="flex-grow">
-              <RegisterPetPage />
-            </div>
-          </div>
+          <SiteLayout>
+            <RegisterPetPage />
+          </SiteLayout>
         </ProtectedRoute>
       } />
-    </Routes >
+    </Routes>
   );
 }
 

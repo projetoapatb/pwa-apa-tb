@@ -3,13 +3,13 @@ import { db } from '../lib/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { MapPin, Phone, Calendar, Plus, LogIn, TrendingUp } from 'lucide-react';
+import { MapPin, Phone, Calendar, Plus, LogIn, TrendingUp, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { LostPetForm } from '../components/LostPetForm';
 import type { LostPet } from '../types';
-import { maskPhone } from '../utils/masks';
+import { maskPhone, toWhatsAppLink } from '../utils/masks';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
 
 const LOST_PET_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop';
@@ -27,6 +27,15 @@ const LostPetsPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const [selectedPet, setSelectedPet] = useState<LostPet | null>(null);
     const [loadError, setLoadError] = useState(false);
+
+    useEffect(() => {
+        if (!selectedPet) return;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = prev;
+        };
+    }, [selectedPet]);
 
     useEffect(() => {
         // Apenas anúncios aprovados no site público
@@ -165,14 +174,34 @@ const LostPetsPage: React.FC = () => {
                                 <p className="text-gray-500 text-sm mb-6 line-clamp-3 italic leading-relaxed">
                                     "{pet.description}"
                                 </p>
-                                <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-                                    <a
-                                        href={`tel:${pet.contactPhone}`}
-                                        className="flex items-center gap-2 text-brand-green font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform"
-                                    >
-                                        <Phone size={16} />
-                                        Ligar Agora
-                                    </a>
+                                <div className="flex items-center justify-between pt-6 border-t border-gray-100 gap-3">
+                                    {(() => {
+                                        const wa = toWhatsAppLink(
+                                            pet.contactPhone,
+                                            `Olá! Vi o anúncio de ${pet.name} no mural de perdidos da APA Telêmaco Borba.`
+                                        );
+                                        return wa ? (
+                                            <a
+                                                href={wa}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 text-[#128C7E] font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <MessageCircle size={16} />
+                                                WhatsApp
+                                            </a>
+                                        ) : (
+                                            <a
+                                                href={`tel:${pet.contactPhone}`}
+                                                className="flex items-center gap-2 text-brand-green font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Phone size={16} />
+                                                Ligar
+                                            </a>
+                                        );
+                                    })()}
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -190,81 +219,172 @@ const LostPetsPage: React.FC = () => {
 
             {/* Modal de Detalhes */}
             {selectedPet && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/60 backdrop-blur-sm animate-fade-in overflow-hidden">
-                    <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] border-none shadow-2xl relative animate-scale-in scrollbar-hide">
+                <div
+                    className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in"
+                    onClick={() => setSelectedPet(null)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="lost-pet-modal-title"
+                >
+                    <Card
+                        hoverable={false}
+                        className="w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] overflow-hidden rounded-t-[2rem] sm:rounded-[2rem] border-none shadow-2xl relative animate-scale-in flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <button
+                            type="button"
                             onClick={() => setSelectedPet(null)}
-                            className="absolute top-6 right-6 z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white md:text-gray-400 md:hover:text-gray-600 md:bg-gray-50 rounded-full transition-all"
+                            className="absolute top-4 right-4 z-20 p-2.5 bg-white/90 hover:bg-white text-gray-600 rounded-full shadow-md transition-all"
+                            aria-label="Fechar"
                         >
-                            <Plus size={24} className="rotate-45" />
+                            <Plus size={22} className="rotate-45" />
                         </button>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2">
-                            <div className="h-64 md:h-[500px] sticky top-0 md:relative">
+                        <div className="grid grid-cols-1 md:grid-cols-2 min-h-0 flex-1 overflow-hidden">
+                            {/* Foto */}
+                            <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[420px] md:h-full bg-gray-100">
                                 <img
                                     src={getLostPetImageSrc(selectedPet.photoUrl)}
-                                    className="w-full h-full object-cover"
+                                    className="absolute inset-0 w-full h-full object-cover"
                                     alt={selectedPet.name}
                                 />
-                                <div className={`absolute top-6 left-6 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg ${selectedPet.status === 'perdido' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-                                    }`}>
-                                    {selectedPet.status}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent md:hidden" />
+                                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                                    <span
+                                        className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg ${
+                                            selectedPet.status === 'perdido' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                                        }`}
+                                    >
+                                        {selectedPet.status}
+                                    </span>
+                                    {selectedPet.species && (
+                                        <span className="px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/95 text-gray-700 shadow-lg">
+                                            {selectedPet.species}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="p-6 md:p-10 space-y-6 bg-white">
-                                <div>
-                                    <h2 className="text-3xl font-black text-gray-800 font-merriweather mb-2">{selectedPet.name}</h2>
-                                    <div className="flex items-center gap-2 text-brand-green font-bold">
-                                        <MapPin size={18} />
-                                        <span>{selectedPet.lastSeenLocation}</span>
-                                    </div>
-                                </div>
+                            {/* Conteúdo */}
+                            <div className="flex flex-col min-h-0 bg-white overflow-y-auto scrollbar-hide">
+                                <div className="p-6 sm:p-8 space-y-5 flex-1">
+                                    <header className="pr-10 space-y-2">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">
+                                            Mural de Perdidos
+                                        </p>
+                                        <h2
+                                            id="lost-pet-modal-title"
+                                            className="text-2xl sm:text-3xl font-black text-gray-800 font-merriweather leading-tight"
+                                        >
+                                            {selectedPet.name}
+                                        </h2>
+                                    </header>
 
-                                <div className="space-y-6">
-                                    <div className="flex items-start gap-4 p-5 bg-gray-50 rounded-2xl">
-                                        <Calendar className="text-brand-green mt-1" size={20} />
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none mb-1">Data do ocorrido</p>
-                                            <p className="text-gray-700 font-bold">{selectedPet.lastSeenDate?.toDate().toLocaleDateString('pt-BR')}</p>
+                                    {/* Info cards em grade */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="flex items-start gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                            <div className="w-10 h-10 rounded-xl bg-brand-green/10 text-brand-green flex items-center justify-center flex-shrink-0">
+                                                <MapPin size={18} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Local</p>
+                                                <p className="text-sm font-bold text-gray-800 leading-snug break-words">
+                                                    {selectedPet.lastSeenLocation}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none ml-2">Descrição Completa</p>
-                                        <div className="bg-brand-green/5 p-6 rounded-3xl border border-brand-green/10">
-                                            <p className="text-gray-600 leading-relaxed italic">
-                                                "{selectedPet.description}"
-                                            </p>
+                                        <div className="flex items-start gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                            <div className="w-10 h-10 rounded-xl bg-brand-green/10 text-brand-green flex items-center justify-center flex-shrink-0">
+                                                <Calendar size={18} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Data</p>
+                                                <p className="text-sm font-bold text-gray-800">
+                                                    {selectedPet.lastSeenDate?.toDate
+                                                        ? selectedPet.lastSeenDate.toDate().toLocaleDateString('pt-BR')
+                                                        : '—'}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
 
                                     {selectedPet.hasReward && (
-                                        <div className="p-6 bg-brand-orange/10 border-2 border-brand-orange/20 rounded-3xl flex items-center gap-4 animate-bounce-in">
-                                            <div className="bg-brand-orange p-3 rounded-2xl text-white">
-                                                <TrendingUp size={24} />
+                                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-brand-orange/10 border border-brand-orange/20">
+                                            <div className="w-11 h-11 rounded-xl bg-brand-orange text-white flex items-center justify-center flex-shrink-0">
+                                                <TrendingUp size={20} />
                                             </div>
                                             <div>
-                                                <p className="text-[10px] text-brand-orange font-black uppercase tracking-widest leading-none mb-1">Há uma Recompensa!</p>
-                                                <p className="text-gray-800 font-black text-xl">{selectedPet.rewardValue}</p>
+                                                <p className="text-[10px] text-brand-orange font-black uppercase tracking-widest mb-0.5">
+                                                    Recompensa
+                                                </p>
+                                                <p className="text-lg font-black text-gray-800">{selectedPet.rewardValue}</p>
                                             </div>
                                         </div>
                                     )}
+
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                            Descrição
+                                        </p>
+                                        <div className="p-4 rounded-2xl bg-brand-green/5 border border-brand-green/10">
+                                            <p className="text-sm text-gray-600 leading-relaxed">
+                                                {selectedPet.description}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="pt-8 border-t border-gray-100">
-                                    <p className="text-xs text-gray-400 font-bold text-center mb-6">TEM INFORMAÇÕES? ENTRE EM CONTATO AGORA:</p>
-                                    <a
-                                        href={`tel:${selectedPet.contactPhone}`}
-                                        className="flex items-center justify-center gap-3 w-full bg-brand-green text-white py-4 rounded-2xl text-base font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-green-900/10"
-                                    >
-                                        <Phone size={20} />
-                                        Ligar: {maskPhone(selectedPet.contactPhone)}
-                                    </a>
-
-                                    <p className="text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-6">
-                                        Ajude a divulgar este caso compartilhando com amigos.
+                                {/* CTAs fixos no rodapé do painel */}
+                                <div className="p-6 sm:p-8 pt-4 border-t border-gray-100 bg-white space-y-3 sticky bottom-0">
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-center">
+                                        Tem informações? Fale agora
                                     </p>
+                                    {(() => {
+                                        const wa = toWhatsAppLink(
+                                            selectedPet.contactPhone,
+                                            `Olá! Vi o anúncio de ${selectedPet.name} no mural de perdidos da APA Telêmaco Borba.`
+                                        );
+                                        return wa ? (
+                                            <a
+                                                href={wa}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-center gap-2.5 w-full bg-[#25D366] hover:bg-[#1ebe57] text-white py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-lg shadow-green-900/10"
+                                            >
+                                                <MessageCircle size={18} />
+                                                WhatsApp · {maskPhone(selectedPet.contactPhone)}
+                                            </a>
+                                        ) : null;
+                                    })()}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <a
+                                            href={`tel:${selectedPet.contactPhone}`}
+                                            className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-brand-green text-white text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all"
+                                        >
+                                            <Phone size={16} />
+                                            Ligar
+                                        </a>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                const shareUrl = `${window.location.origin}/perdidos`;
+                                                const text = `Ajude a encontrar ${selectedPet.name}! Visto em ${selectedPet.lastSeenLocation}.`;
+                                                try {
+                                                    if (navigator.share) {
+                                                        await navigator.share({ title: selectedPet.name, text, url: shareUrl });
+                                                    } else {
+                                                        await navigator.clipboard.writeText(`${text} ${shareUrl}`);
+                                                        alert('Link copiado para compartilhar!');
+                                                    }
+                                                } catch {
+                                                    // cancelado
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-gray-100 text-xs font-black uppercase tracking-widest text-gray-500 hover:border-brand-green hover:text-brand-green transition-all"
+                                        >
+                                            Compartilhar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

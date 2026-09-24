@@ -124,7 +124,7 @@ const ProfilePage: React.FC = () => {
                                                 type="text"
                                                 value={formData.displayName}
                                                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                                                className="w-full pl-15 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
+                                                className="w-full pl-12 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
                                                 placeholder="Seu nome"
                                                 required
                                             />
@@ -139,7 +139,7 @@ const ProfilePage: React.FC = () => {
                                                 type="tel"
                                                 value={formData.phone}
                                                 onChange={handlePhoneChange}
-                                                className="w-full pl-15 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
+                                                className="w-full pl-12 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
                                                 placeholder="(42) 99999-9999"
                                                 maxLength={15}
                                                 required
@@ -167,7 +167,7 @@ const ProfilePage: React.FC = () => {
                                                 type="text"
                                                 value={formData.address}
                                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                                className="w-full pl-15 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
+                                                className="w-full pl-12 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
                                                 placeholder="Rua, Número, Bairro, Cidade"
                                             />
                                         </div>
@@ -194,7 +194,7 @@ const ProfilePage: React.FC = () => {
                                                 type="text"
                                                 value={formData.householdCount}
                                                 onChange={(e) => setFormData({ ...formData, householdCount: e.target.value })}
-                                                className="w-full pl-15 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
+                                                className="w-full pl-12 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
                                                 placeholder="Ex: 3 pessoas"
                                             />
                                         </div>
@@ -221,7 +221,7 @@ const ProfilePage: React.FC = () => {
                                                     type="text"
                                                     value={formData.petDetails}
                                                     onChange={(e) => setFormData({ ...formData, petDetails: e.target.value })}
-                                                    className="w-full pl-15 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
+                                                    className="w-full pl-12 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
                                                     placeholder="Ex: 2 cães dóceis"
                                                 />
                                             </div>
@@ -236,7 +236,7 @@ const ProfilePage: React.FC = () => {
                                                 type="text"
                                                 value={formData.availability}
                                                 onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
-                                                className="w-full pl-15 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
+                                                className="w-full pl-12 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand-green focus:shadow-lg focus:shadow-green-900/5 transition-all font-bold text-gray-700"
                                                 placeholder="Ex: Período curto ou longo?"
                                             />
                                         </div>
@@ -258,7 +258,7 @@ const ProfilePage: React.FC = () => {
                             <div className="bg-brand-orange/5 p-6 rounded-3xl border border-brand-orange/20 flex items-start gap-4">
                                 <Info size={24} className="text-brand-orange flex-shrink-0" />
                                 <p className="text-sm text-gray-600 leading-relaxed">
-                                    <strong>Nota:</strong> Preencher os dados residenciais acima facilitará o processo quando você se candidatar a um **Lar Temporário**. Você não precisará preencher tudo novamente!
+                                    <strong>Nota:</strong> Preencher os dados residenciais acima facilitará o processo quando você se candidatar a um <strong>Lar Temporário</strong>. Você não precisará preencher tudo novamente!
                                 </p>
                             </div>
 

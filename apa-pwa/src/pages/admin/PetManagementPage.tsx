@@ -212,10 +212,10 @@ const PetManagementPage: React.FC = () => {
                                                             </p>
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
-                                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <div className="flex justify-end gap-2">
                                                                 <Link to={`/admin/caes/editar/${pet.id}`}>
-                                                                    <Button variant="outline" size="sm" className="p-2 h-auto rounded-lg hover:border-brand-green hover:bg-green-50">
-                                                                        <Edit2 size={16} className="text-gray-400 group-hover:text-brand-green" />
+                                                                    <Button variant="outline" size="sm" className="p-2 h-auto rounded-lg hover:border-brand-green hover:bg-green-50" title="Editar">
+                                                                        <Edit2 size={16} className="text-brand-green" />
                                                                     </Button>
                                                                 </Link>
                                                                 <Button
@@ -223,6 +223,7 @@ const PetManagementPage: React.FC = () => {
                                                                     size="sm"
                                                                     className="p-2 h-auto rounded-lg hover:border-red-200 hover:bg-red-50"
                                                                     onClick={() => handleDelete(pet.id, pet.name)}
+                                                                    title="Excluir"
                                                                 >
                                                                     <Trash2 size={16} className="text-red-400" />
                                                                 </Button>

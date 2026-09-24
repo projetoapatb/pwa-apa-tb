@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Landmark, Check, Package, Mail, Info } from 'lucide-react';
+import { Heart, Landmark, Check, Package, MessageCircle, Info } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { GlobalSettings } from '../types';
 import SEO from '../components/SEO';
+import { maskPhone, toWhatsAppLink } from '../utils/masks';
 
-const DONATION_EMAIL = 'projeto.apa.tb@gmail.com';
+const DONATION_WHATSAPP = '(42) 99159-1588';
 
 const ACCEPTED_ITEMS = [
     'Ração (adulto e filhote)',
@@ -58,7 +59,10 @@ const DonationPage: React.FC = () => {
         }
     };
 
-    const contactMailto = `mailto:${DONATION_EMAIL}?subject=${encodeURIComponent('Doação de itens - APA Telêmaco Borba')}`;
+    const donationWhatsAppUrl = toWhatsAppLink(
+        DONATION_WHATSAPP,
+        'Olá! Quero doar itens para a APA Telêmaco Borba. Podem me orientar sobre a entrega?'
+    );
 
     if (loading) return <div className="p-20 text-center animate-pulse text-brand-green font-bold">Carregando formas de ajudar...</div>;
 
@@ -94,17 +98,32 @@ const DonationPage: React.FC = () => {
                             Forma mais rápida de nos ajudar a pagar contas de clínicas e comprar comida.
                         </p>
                         <div
-                            onClick={handleCopyPix}
-                            className="mt-8 p-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 w-full group cursor-pointer hover:border-brand-green transition-all relative overflow-hidden"
+                            onClick={settings?.pixKey ? handleCopyPix : undefined}
+                            className={`mt-8 p-6 bg-gray-50 rounded-2xl border-2 border-dashed w-full relative overflow-hidden ${
+                                settings?.pixKey
+                                    ? 'border-gray-200 group cursor-pointer hover:border-brand-green transition-all'
+                                    : 'border-gray-100 cursor-default'
+                            }`}
                         >
-                            <span className="text-xs uppercase font-bold text-gray-400 block mb-2">Chave PIX (Clique para copiar)</span>
-                            <code className="text-brand-green font-bold text-lg break-all">
-                                {settings?.pixKey || 'financeiro@patas.org.br'}
-                            </code>
-                            {copied && (
-                                <div className="absolute inset-0 bg-brand-green text-white flex items-center justify-center font-bold gap-2 animate-fade-in">
-                                    <Check size={20} /> Copiado!
-                                </div>
+                            {settings?.pixKey ? (
+                                <>
+                                    <span className="text-xs uppercase font-bold text-gray-400 block mb-2">Chave PIX (Clique para copiar)</span>
+                                    <code className="text-brand-green font-bold text-lg break-all">
+                                        {settings.pixKey}
+                                    </code>
+                                    {copied && (
+                                        <div className="absolute inset-0 bg-brand-green text-white flex items-center justify-center font-bold gap-2 animate-fade-in">
+                                            <Check size={20} /> Copiado!
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-xs uppercase font-bold text-gray-400 block mb-2">Chave PIX</span>
+                                    <p className="text-sm text-gray-500 leading-relaxed">
+                                        A chave ainda não foi publicada. Entre em contato pelo e-mail abaixo ou tente novamente mais tarde.
+                                    </p>
+                                </>
                             )}
                         </div>
                     </div>
@@ -160,19 +179,20 @@ const DonationPage: React.FC = () => {
                         Para doar itens físicos, entre em contato com a APA para combinar a melhor forma de entrega ou verificar a possibilidade de retirada. Assim, a equipe consegue orientar sobre os itens mais necessários no momento.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                        <a
-                            href={contactMailto}
-                            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-brand-green text-white rounded-2xl font-bold text-sm shadow-lg shadow-green-900/10 hover:bg-green-700 transition-all active:scale-95"
-                        >
-                            <Mail size={18} />
-                            Entrar em contato para doar itens
-                        </a>
-                        <p className="text-sm text-gray-500 flex items-center justify-center sm:justify-start">
-                            ou escreva para{' '}
-                            <a href={contactMailto} className="text-brand-green font-bold hover:underline ml-1">
-                                {DONATION_EMAIL}
+                    <div className="flex flex-col sm:flex-row gap-4 mb-8 items-stretch sm:items-center">
+                        {donationWhatsAppUrl && (
+                            <a
+                                href={donationWhatsAppUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366] hover:bg-[#1ebe57] text-white rounded-2xl font-bold text-sm shadow-lg shadow-green-900/10 transition-all active:scale-95"
+                            >
+                                <MessageCircle size={18} />
+                                Combinar entrega no WhatsApp
                             </a>
+                        )}
+                        <p className="text-sm text-gray-500 flex items-center justify-center sm:justify-start flex-wrap gap-1">
+                            <span className="font-bold text-brand-green">+55 {maskPhone(DONATION_WHATSAPP)}</span>
                         </p>
                     </div>
 

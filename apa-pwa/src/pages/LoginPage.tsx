@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogIn, Lock, Mail, AlertCircle } from 'lucide-react';
 
@@ -11,24 +11,24 @@ const LoginPage: React.FC = () => {
 
     const { signIn, signInWithGoogle, isAdmin, user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
     // Hook para redirecionar após login bem sucedido e role carregada
     React.useEffect(() => {
         if (user) {
-            console.log("LoginPage: Usuário detectado, preparando redirecionamento... isAdmin =", isAdmin);
-            // Pequeno delay para garantir que o Firestore retornou a role no AuthContext
             const timer = setTimeout(() => {
-                if (isAdmin) {
-                    console.log("LoginPage: Redirecionando para /admin");
+                if (fromPath && fromPath !== '/login') {
+                    navigate(fromPath, { replace: true });
+                } else if (isAdmin) {
                     navigate('/admin', { replace: true });
                 } else {
-                    console.log("LoginPage: Redirecionando para Home");
                     navigate('/', { replace: true });
                 }
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [user, isAdmin, navigate]);
+    }, [user, isAdmin, navigate, fromPath]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,7 +64,7 @@ const LoginPage: React.FC = () => {
                         <LogIn size={32} />
                     </div>
                     <h2 className="text-2xl font-bold">Acessar Conta</h2>
-                    <p className="text-green-100 text-sm mt-2">Entre para adotar ou ajudar a ONG</p>
+                    <p className="text-green-100 text-sm mt-2">Entre com Google ou e-mail para adotar, anunciar e ajudar</p>
                 </div>
 
                 <div className="p-8">

@@ -9,8 +9,9 @@ import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import SEO from '../components/SEO';
-import { ArrowLeft, Send, CheckCircle2, ChevronRight, Share2, Info, Users, Heart, Clock, User as UserIcon, Phone } from 'lucide-react';
-import { maskPhone } from '../utils/masks';
+import { ArrowLeft, Send, CheckCircle2, ChevronRight, Share2, Info, Users, Heart, Clock, User as UserIcon, Phone, MessageCircle, ChevronDown } from 'lucide-react';
+import { maskPhone, toWhatsAppLink } from '../utils/masks';
+import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
 
 
 
@@ -26,6 +27,8 @@ const PetDetailPage: React.FC = () => {
     const [indexError, setIndexError] = useState(false);
     const [privacyConsent, setPrivacyConsent] = useState(false);
     const [consentError, setConsentError] = useState('');
+    const [showApaPath, setShowApaPath] = useState(false);
+    const [shareFeedback, setShareFeedback] = useState('');
 
     const { profile, user, loading: authLoading } = useAuth();
 
@@ -136,6 +139,28 @@ const PetDetailPage: React.FC = () => {
         }
     };
 
+    const handleShare = async () => {
+        if (!pet) return;
+        const shareUrl = window.location.href;
+        const shareData = {
+            title: `Adote ${pet.name} | APA Telêmaco Borba`,
+            text: `Conheça ${pet.name} e ajude a encontrar um lar!`,
+            url: shareUrl,
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+                return;
+            }
+            await navigator.clipboard.writeText(shareUrl);
+            setShareFeedback('Link copiado!');
+            setTimeout(() => setShareFeedback(''), 2500);
+        } catch {
+            // Usuário cancelou o share nativo — sem feedback de erro.
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -157,6 +182,14 @@ const PetDetailPage: React.FC = () => {
     }
 
     const isProfileComplete = !!(profile?.displayName && profile?.phone);
+    const whatsappUrl = pet.contactPhone
+        ? toWhatsAppLink(
+            pet.contactPhone,
+            `Olá! Vi o anúncio da ${pet.name} no site da APA Telêmaco Borba e tenho interesse em adotar.`
+        )
+        : null;
+    const hasActiveLead = !!(currentLead && currentLead.status !== 'rejected');
+    const apaPathOpen = showApaPath || !whatsappUrl || hasActiveLead || submitted;
 
     return (
         <main className="min-h-screen bg-gray-50 pb-20">
@@ -183,7 +216,9 @@ const PetDetailPage: React.FC = () => {
                         <div className="bg-white p-2 rounded-[2.5rem] shadow-xl overflow-hidden border border-white">
                             <div className="aspect-[4/5] md:aspect-video rounded-[2rem] overflow-hidden group">
                                 <img
-                                    src={mainPhoto || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop'}
+                                    src={mainPhoto
+                                        ? getOptimizedCloudinaryUrl(mainPhoto, 'f_auto,q_auto,w_1200')
+                                        : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop'}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     alt={pet.name}
                                 />
@@ -266,21 +301,19 @@ const PetDetailPage: React.FC = () => {
                             </div>
                         </Card>
 
-                        {/* Bloco de Interesse (1-Clique) */}
+                        {/* Como adotar — contato unificado */}
                         <Card className={`p-8 transition-all duration-500 overflow-hidden relative ${submitted ? 'bg-brand-green text-white shadow-2xl scale-105 z-10' : 'bg-white'}`}>
                             {submitted ? (
                                 <div className="text-center py-10 animate-bounce-in">
                                     <div className="bg-white/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                                         <CheckCircle2 size={48} className="text-white" />
                                     </div>
-                                    <h2 className="text-2xl font-bold mb-2">Manifestação Enviada!</h2>
+                                    <h2 className="text-2xl font-bold mb-2">Pedido enviado!</h2>
                                     <p className="text-green-50 mb-8 px-4">
-                                        Ficamos felizes com seu interesse! Nossa equipe analisará seu perfil e entrará em contato em breve para conversar sobre a adoção da {pet.name}.
+                                        Registramos seu interesse em adotar a {pet.name}. A equipe da APA vai analisar e entrar em contato em breve.
                                     </p>
                                     <Button
-                                        onClick={() => {
-                                            setSubmitted(false);
-                                        }}
+                                        onClick={() => setSubmitted(false)}
                                         variant="outline"
                                         className="border-white text-white hover:bg-white/10"
                                     >
@@ -288,125 +321,198 @@ const PetDetailPage: React.FC = () => {
                                     </Button>
                                 </div>
                             ) : (
-                                <>
-                                    <div className="flex justify-between items-center mb-8">
-                                        <h2 className="text-2xl font-bold text-gray-800 font-merriweather">Interesse em Adotar</h2>
-                                        <Share2 className="text-gray-300 hover:text-brand-green cursor-pointer transition-colors" size={20} />
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-gray-800 font-merriweather">
+                                                Quer adotar a {pet.name}?
+                                            </h2>
+                                            <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                                                O interesse é sempre no animal. Escolha como prefere seguir:
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleShare}
+                                            className="flex-shrink-0 p-3 rounded-2xl bg-gray-50 text-gray-400 hover:text-brand-green hover:bg-brand-green/5 transition-colors relative"
+                                            title="Compartilhar anúncio"
+                                            aria-label="Compartilhar anúncio"
+                                        >
+                                            <Share2 size={20} />
+                                            {shareFeedback && (
+                                                <span className="absolute -bottom-8 right-0 text-[10px] font-bold text-brand-green whitespace-nowrap">
+                                                    {shareFeedback}
+                                                </span>
+                                            )}
+                                        </button>
                                     </div>
 
-                                    {!user ? (
-                                        <div className="text-center space-y-6 py-6 border-2 border-dashed border-gray-100 rounded-[2rem]">
-                                            <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-                                                <Users className="text-gray-300" size={32} />
-                                            </div>
-                                            <div className="px-6">
-                                                <p className="text-gray-600 mb-6 antialiased">Você precisa estar logado para manifestar interesse em adotar a {pet.name}.</p>
-                                                <Link to="/login">
-                                                    <Button variant="primary" className="w-full py-6 text-lg rounded-2xl shadow-xl shadow-teal-900/10">
-                                                        Entrar agora
-                                                    </Button>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    ) : (loadingLead || isCreating) ? (
-                                        <div className="py-10 text-center animate-pulse text-gray-400">Carregando...</div>
-                                    ) : indexError ? (
-                                        <div className="p-6 bg-orange-50 border-2 border-orange-100 rounded-[2rem] text-center">
-                                            <Info size={32} className="text-brand-orange mx-auto mb-4" />
-                                            <p className="text-sm text-gray-700 font-bold mb-2">Não foi possível verificar seu interesse</p>
-                                            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                                                Tente recarregar a página. Se o problema continuar, entre em contato com a APA ou manifeste interesse pelo seu perfil.
-                                            </p>
-                                            <Link to="/perfil" className="text-xs font-bold text-brand-green underline">Ir para o perfil</Link>
-                                        </div>
-                                    ) : currentLead && currentLead.status !== 'rejected' ? (
-                                        <div className={`p-8 rounded-[2rem] text-center border-2 transition-all ${currentLead.status === 'approved' ? 'bg-brand-green/5 border-brand-green/20' : 'bg-brand-orange/5 border-brand-orange/20'}`}>
-                                            <div className={`${currentLead.status === 'approved' ? 'bg-brand-green shadow-green-900/20' : 'bg-brand-orange shadow-orange-900/20'} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}>
-                                                {currentLead.status === 'approved' ? <Heart size={32} className="text-white fill-current" /> : <Clock size={32} className="text-white" />}
-                                            </div>
-                                            <h3 className="text-xl font-bold text-gray-800 mb-2 font-merriweather">
-                                                {currentLead.status === 'approved' ? 'Interesse Aprovado!' : 'Interesse em Análise'}
-                                            </h3>
-                                            <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-                                                {currentLead.status === 'approved'
-                                                    ? `Seu interesse em adotar a ${pet.name} foi aprovado! Nossa equipe entrará em contato para agendar o encontro (${maskPhone(currentLead.phone)}).`
-                                                    : `Já recebemos sua manifestação de interesse pela ${pet.name}. Nossa equipe está avaliando seu perfil!`}
-                                            </p>
-
-                                            <Badge variant={currentLead.status === 'approved' ? 'success' : 'warning'} className="px-6 py-2 uppercase tracking-widest text-[10px] font-black">
-                                                {currentLead.status === 'approved' ? 'Parabéns!' : 'Aguarde o contato'}
-                                            </Badge>
-                                        </div>
-                                    ) : !isProfileComplete ? (
-                                        <div className="text-center space-y-6 py-8 px-6 bg-brand-orange/5 border-2 border-brand-orange/20 rounded-[2rem]">
-                                            <div className="bg-brand-orange/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-                                                <Info className="text-brand-orange" size={32} />
+                                    {/* Caminho 1: WhatsApp direto (preferencial quando existe) */}
+                                    {whatsappUrl && (
+                                        <div className="rounded-[1.75rem] border-2 border-[#25D366]/25 bg-[#25D366]/5 p-6 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-[#128C7E] bg-white px-3 py-1 rounded-full">
+                                                    Mais rápido
+                                                </span>
                                             </div>
                                             <div>
-                                                <p className="font-bold text-gray-800 mb-2">Complete seu Perfil</p>
-                                                <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                                                    Para adotar, precisamos de alguns dados básicos como seu telefone e nome completo.
-                                                </p>
-                                                <Link to="/perfil">
-                                                    <Button variant="outline" className="w-full border-brand-orange text-brand-orange hover:bg-brand-orange/5 rounded-2xl">
-                                                        Ir para Perfil
-                                                    </Button>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-6">
-                                            {currentLead?.status === 'rejected' && (
-                                                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-600 mb-4 italic">
-                                                    Sua tentativa anterior não foi aprovada: "{currentLead.rejectionReason}"
-                                                </div>
-                                            )}
-
-                                            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 mb-6">
-                                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4">Seus dados de contato:</p>
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center gap-3 text-gray-700">
-                                                        <UserIcon size={16} className="text-brand-acqua" />
-                                                        <span className="font-medium">{profile?.displayName}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 text-gray-700">
-                                                        <Phone size={16} className="text-brand-acqua" />
-                                                        <span className="font-medium">{maskPhone(profile?.phone || '')}</span>
-                                                    </div>
-
-                                                </div>
-                                                <p className="text-[10px] text-gray-400 mt-6 leading-tight italic">
-                                                    * Ao clicar abaixo, esses dados serão enviados para que possamos entrar em contato.
+                                                <h3 className="font-bold text-gray-800 text-lg">Falar com quem anunciou</h3>
+                                                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                                    Conversa direta no WhatsApp sobre a adoção da {pet.name}.
                                                 </p>
                                             </div>
-
-                                            <PrivacyConsentCheckbox
-                                                checked={privacyConsent}
-                                                onChange={(checked) => {
-                                                    setPrivacyConsent(checked);
-                                                    if (checked) setConsentError('');
-                                                }}
-                                                id="adoptionPrivacyConsent"
-                                                error={consentError}
-                                            />
-
-                                            <Button
-                                                onClick={handleManifestInterest}
-                                                variant="primary"
-                                                className="w-full py-6 text-lg rounded-[1.5rem] shadow-xl shadow-brand-acqua/20 group relative overflow-hidden"
-                                                isLoading={loadingLead}
+                                            <a
+                                                href={whatsappUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-center gap-3 w-full bg-[#25D366] hover:bg-[#1ebe57] text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-lg shadow-green-900/10"
                                             >
-                                                <span className="relative z-10 flex items-center gap-2">
-                                                    Manifestar Interesse <Send size={20} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                                                </span>
-                                            </Button>
-
-                                            <p className="text-center text-[10px] text-gray-400 font-medium">
-                                                Nossa equipe entrará em contato em até 48h úteis.
-                                            </p>
+                                                <MessageCircle size={20} />
+                                                Abrir WhatsApp
+                                            </a>
+                                            {pet.contactPhone && (
+                                                <p className="text-center text-xs text-gray-400">
+                                                    {maskPhone(pet.contactPhone)}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
-                                </>
+
+                                    {/* Caminho 2: Mediação da APA */}
+                                    <div className={`rounded-[1.75rem] border-2 p-6 ${whatsappUrl ? 'border-gray-100 bg-gray-50/80' : 'border-brand-acqua/20 bg-brand-acqua/5'}`}>
+                                        {whatsappUrl ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowApaPath((v) => !v)}
+                                                className="w-full flex items-center justify-between gap-3 text-left"
+                                            >
+                                                <div>
+                                                    <h3 className="font-bold text-gray-800">Prefere que a APA intermedeie?</h3>
+                                                    <p className="text-sm text-gray-500 mt-1">
+                                                        Envie seu interesse e a equipe entra em contato com você.
+                                                    </p>
+                                                </div>
+                                                <ChevronDown
+                                                    size={20}
+                                                    className={`text-gray-400 flex-shrink-0 transition-transform ${apaPathOpen ? 'rotate-180' : ''}`}
+                                                />
+                                            </button>
+                                        ) : (
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-gray-800 text-lg">Manifestar interesse em adotar</h3>
+                                                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                                    Envie seus dados para a APA. Nossa equipe analisa e retorna sobre a {pet.name}.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {apaPathOpen && (
+                                            <div className={`space-y-5 ${whatsappUrl ? 'mt-6 pt-6 border-t border-gray-200' : ''}`}>
+                                                {!user ? (
+                                                    <div className="text-center space-y-4 py-4">
+                                                        <p className="text-sm text-gray-600">
+                                                            Faça login para enviar o interesse em adotar a {pet.name} pela APA.
+                                                        </p>
+                                                        <Link
+                                                            to="/login"
+                                                            state={{ from: { pathname: `/adocao/${pet.id}` } }}
+                                                        >
+                                                            <Button variant="primary" className="w-full py-5 rounded-2xl">
+                                                                Entrar para continuar
+                                                            </Button>
+                                                        </Link>
+                                                    </div>
+                                                ) : (loadingLead || isCreating) ? (
+                                                    <div className="py-8 text-center animate-pulse text-gray-400 text-sm">Carregando...</div>
+                                                ) : indexError ? (
+                                                    <div className="p-5 bg-orange-50 border border-orange-100 rounded-2xl text-center">
+                                                        <p className="text-sm text-gray-700 font-bold mb-2">Não foi possível verificar seu interesse</p>
+                                                        <p className="text-xs text-gray-500 mb-3">Recarregue a página ou tente pelo perfil.</p>
+                                                        <Link to="/perfil" className="text-xs font-bold text-brand-green underline">Ir para o perfil</Link>
+                                                    </div>
+                                                ) : currentLead && currentLead.status !== 'rejected' ? (
+                                                    <div className={`p-6 rounded-2xl text-center border-2 ${currentLead.status === 'approved' ? 'bg-brand-green/5 border-brand-green/20' : 'bg-brand-orange/5 border-brand-orange/20'}`}>
+                                                        <div className={`${currentLead.status === 'approved' ? 'bg-brand-green' : 'bg-brand-orange'} w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4`}>
+                                                            {currentLead.status === 'approved'
+                                                                ? <Heart size={28} className="text-white fill-current" />
+                                                                : <Clock size={28} className="text-white" />}
+                                                        </div>
+                                                        <h4 className="font-bold text-gray-800 mb-2">
+                                                            {currentLead.status === 'approved'
+                                                                ? 'Interesse aprovado!'
+                                                                : 'Interesse em análise'}
+                                                        </h4>
+                                                        <p className="text-sm text-gray-600 leading-relaxed">
+                                                            {currentLead.status === 'approved'
+                                                                ? `A APA vai entrar em contato sobre a adoção da ${pet.name} (${maskPhone(currentLead.phone)}).`
+                                                                : `Já recebemos seu interesse na ${pet.name}. Aguarde o retorno da equipe.`}
+                                                        </p>
+                                                    </div>
+                                                ) : !isProfileComplete ? (
+                                                    <div className="text-center space-y-4 py-2">
+                                                        <p className="text-sm text-gray-600 leading-relaxed">
+                                                            Complete nome e telefone no perfil para enviar o interesse na {pet.name}.
+                                                        </p>
+                                                        <Link to="/perfil">
+                                                            <Button variant="outline" className="w-full border-brand-orange text-brand-orange rounded-2xl">
+                                                                Completar perfil
+                                                            </Button>
+                                                        </Link>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-5">
+                                                        {currentLead?.status === 'rejected' && (
+                                                            <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-600 italic">
+                                                                Tentativa anterior não aprovada: "{currentLead.rejectionReason}"
+                                                            </div>
+                                                        )}
+
+                                                        <div className="bg-white p-5 rounded-2xl border border-gray-100">
+                                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">
+                                                                Dados que a APA receberá
+                                                            </p>
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center gap-3 text-gray-700 text-sm">
+                                                                    <UserIcon size={16} className="text-brand-acqua" />
+                                                                    <span className="font-medium">{profile?.displayName}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-3 text-gray-700 text-sm">
+                                                                    <Phone size={16} className="text-brand-acqua" />
+                                                                    <span className="font-medium">{maskPhone(profile?.phone || '')}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <PrivacyConsentCheckbox
+                                                            checked={privacyConsent}
+                                                            onChange={(checked) => {
+                                                                setPrivacyConsent(checked);
+                                                                if (checked) setConsentError('');
+                                                            }}
+                                                            id="adoptionPrivacyConsent"
+                                                            error={consentError}
+                                                        />
+
+                                                        <Button
+                                                            onClick={handleManifestInterest}
+                                                            variant="primary"
+                                                            className="w-full py-5 text-base rounded-2xl"
+                                                            isLoading={isCreating}
+                                                        >
+                                                            <span className="flex items-center gap-2">
+                                                                Quero adotar a {pet.name} <Send size={18} />
+                                                            </span>
+                                                        </Button>
+
+                                                        <p className="text-center text-[10px] text-gray-400">
+                                                            Retorno em até 48h úteis.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             )}
                         </Card>
                     </div>
